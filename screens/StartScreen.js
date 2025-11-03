@@ -34,11 +34,22 @@ export default function StartScreen({ navigation }) {
           <Text style={styles.cardBody}>
             Nasza aplikacja to prosty sposób na płatności i parkowanie. Kupisz
             bilety, zaparkujesz w strefach płatnych, zarządzasz czasem postoju,
-            saldem konta i historia parkowania. Dodatkowo lokalizacja miejsca
+            saldem konta i historią parkowania. Dodatkowo lokalizacja miejsca
             postoju i rozpoznawanie tablic rejestracyjnych.
             {"\n\n"}Zarejestruj się, aby odkryć wszystkie funkcje, lub zaloguj
             się, jeśli masz już konto.
           </Text>
+        </View>
+
+        {/* Nowy przycisk testowy na środku ekranu */}
+        <View style={styles.centerButtonContainer}>
+<TouchableOpacity
+  style={styles.testButton}
+  onPress={() => navigation.navigate("Test")}
+  activeOpacity={0.8}
+>
+  <Text style={styles.testButtonText}>Test ekranów</Text>
+</TouchableOpacity>
         </View>
 
         <View style={styles.footer}>
@@ -117,6 +128,23 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     lineHeight: 22,
+  },
+  centerButtonContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  testButton: {
+    backgroundColor: GREEN,
+    paddingHorizontal: 24,
+    paddingVertical: 14,
+    borderRadius: 8,
+    elevation: 3,
+  },
+  testButtonText: {
+    fontSize: 18,
+    fontWeight: "700",
+    color: "#0B2B13",
   },
   footer: {
     position: "absolute",
