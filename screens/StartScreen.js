@@ -1,4 +1,3 @@
-// screens/StartScreen.js
 import React from "react";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -21,6 +20,7 @@ export default function StartScreen({ navigation }) {
         style={styles.bg}
         resizeMode="cover"
       >
+        {/* BANER Z LOGO */}
         <View style={styles.header}>
           <AntDesign name="car" size={50} color="#303130ff" />
           <Text style={styles.logoText}>
@@ -28,6 +28,7 @@ export default function StartScreen({ navigation }) {
           </Text>
         </View>
 
+        {/* PANEL TEKSTOWY NA ŚRODKU */}
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Parkowanie staje się łatwiejsze</Text>
           <View style={styles.hr} />
@@ -41,7 +42,7 @@ export default function StartScreen({ navigation }) {
           </Text>
         </View>
 
-        {/* Nowy przycisk testowy na środku ekranu */}
+        {/* Przycisk tymczasowy */}
         <View style={styles.centerButtonContainer}>
 <TouchableOpacity
   style={styles.testButton}
@@ -52,6 +53,7 @@ export default function StartScreen({ navigation }) {
 </TouchableOpacity>
         </View>
 
+        {/* STOPKA Z PRZYCISKAMI */}
         <View style={styles.footer}>
           <TouchableOpacity
             style={[styles.cta, styles.ctaSecondary]}
