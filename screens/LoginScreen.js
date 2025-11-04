@@ -1,4 +1,3 @@
-// screens/LoginScreen.js
 import React, { useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
@@ -11,7 +10,7 @@ import {
   SafeAreaView,
 } from "react-native";
 
-export default function LoginScreen() {
+export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -27,36 +26,39 @@ export default function LoginScreen() {
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
-    <View style={styles.container}>
-      <Text style={styles.title}>Zaloguj się</Text>
+      <View style={styles.container}>
+        <Text style={styles.title}>Zaloguj się</Text>
 
-      <TextInput
-        style={styles.input}
-        placeholder="E-mail"
-        placeholderTextColor="#aaa"
-        keyboardType="email-address"
-        autoCapitalize="none"
-        value={email}
-        onChangeText={setEmail}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="E-mail"
+          placeholderTextColor="#aaa"
+          keyboardType="email-address"
+          autoCapitalize="none"
+          value={email}
+          onChangeText={setEmail}
+        />
 
-      <TextInput
-        style={styles.input}
-        placeholder="Hasło"
-        placeholderTextColor="#aaa"
-        secureTextEntry
-        value={password}
-        onChangeText={setPassword}
-      />
+        <TextInput
+          style={styles.input}
+          placeholder="Hasło"
+          placeholderTextColor="#aaa"
+          secureTextEntry
+          value={password}
+          onChangeText={setPassword}
+        />
 
-      <TouchableOpacity style={styles.button} onPress={handleLogin}>
-        <Text style={styles.buttonText}>Zaloguj</Text>
-      </TouchableOpacity>
+        <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Text style={styles.buttonText}>Zaloguj</Text>
+        </TouchableOpacity>
 
-      <TouchableOpacity>
-        <Text style={styles.link}>Nie masz konta? Zarejestruj się</Text>
-      </TouchableOpacity>
-    </View>
+        <TouchableOpacity
+          onPress={() => navigation.navigate("Register")}
+          style={styles.linkBtn}
+        >
+          <Text style={styles.link}>Nie masz konta? Zarejestruj się</Text>
+        </TouchableOpacity>
+      </View>
     </SafeAreaView>
   );
 }
