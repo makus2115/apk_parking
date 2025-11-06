@@ -1,10 +1,17 @@
 import React from "react";
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity, FlatList } from "react-native";
+import {
+  SafeAreaView,
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
+  FlatList,
+} from "react-native";
 
 const items = [
   { key: "1", title: "Login", route: "Login" },
   { key: "2", title: "Register", route: "Register" },
-  { key: "3", title: "Ekran 3", route: "Ekran3" },
+  { key: "3", title: "TicketScreen", route: "Ticket" },
   { key: "4", title: "Ekran 4", route: "Ekran4" },
   { key: "5", title: "Ekran 5", route: "Ekran5" },
   { key: "6", title: "Ekran 6", route: "Ekran6" },

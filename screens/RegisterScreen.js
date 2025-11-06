@@ -26,7 +26,13 @@ export default function RegisterScreen({ navigation }) {
     if (/[A-Z]/.test(password)) score++;
     if (/[0-9]/.test(password)) score++;
     if (/[^A-Za-z0-9]/.test(password)) score++;
-    const labels = ["Bardzo słabe", "Słabe", "Średnie", "Dobre", "Bardzo dobre"];
+    const labels = [
+      "Bardzo słabe",
+      "Słabe",
+      "Średnie",
+      "Dobre",
+      "Bardzo dobre",
+    ];
     return { score, label: labels[score] || labels[0] };
   }, [password]);
 
@@ -49,7 +55,7 @@ export default function RegisterScreen({ navigation }) {
     try {
       setLoading(true);
       //API rejestracji
-      await new Promise((r) => setTimeout(r, 800)); //symulacja
+      //await new Promise((r) => setTimeout(r, 800)); //symulacja
       Alert.alert("Sukces", "Konto utworzone! Możesz się zalogować.", [
         {
           text: "OK",
@@ -125,7 +131,9 @@ export default function RegisterScreen({ navigation }) {
               ]}
             />
           </View>
-          <Text style={styles.strengthText}>Siła hasła: {passwordStrength.label}</Text>
+          <Text style={styles.strengthText}>
+            Siła hasła: {passwordStrength.label}
+          </Text>
         </View>
 
         <TouchableOpacity
