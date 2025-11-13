@@ -12,7 +12,7 @@ const items = [
   { key: "1", title: "Login", route: "Login" },
   { key: "2", title: "Register", route: "Register" },
   { key: "3", title: "TicketScreen", route: "Ticket" },
-  { key: "4", title: "Ekran 4", route: "Ekran4" },
+  { key: "4", title: "Transaktion", route: "Transaktion" },
   { key: "5", title: "Ekran 5", route: "Ekran5" },
   { key: "6", title: "Ekran 6", route: "Ekran6" },
   { key: "7", title: "Ekran 7", route: "Ekran7" },

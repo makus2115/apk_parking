@@ -9,6 +9,7 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
@@ -19,8 +20,13 @@ export default function LoginScreen({ navigation }) {
       Alert.alert("Błąd", "Proszę wprowadzić e-mail i hasło.");
       return;
     }
-    //API
+    // API
     Alert.alert("Logowanie", `Zalogowano jako ${email}`);
+  };
+
+  const handleGoogleLogin = () => {
+    // API Google login
+    Alert.alert("Logowanie", "Zalogowano przez Google");
   };
 
   return (
@@ -50,6 +56,14 @@ export default function LoginScreen({ navigation }) {
 
         <TouchableOpacity style={styles.button} onPress={handleLogin}>
           <Text style={styles.buttonText}>Zaloguj</Text>
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.button, styles.googleButton]} 
+          onPress={handleGoogleLogin}
+        >
+          <MaterialCommunityIcons name="google" size={24} color="white" style={styles.googleIcon} />
+          <Text style={styles.buttonText}>Zaloguj przez Google</Text>
         </TouchableOpacity>
 
         <TouchableOpacity
@@ -97,8 +111,16 @@ const styles = StyleSheet.create({
     alignItems: "center",
     marginTop: 10,
   },
+  googleButton: {
+    flexDirection: "row",  // Umożliwia wyświetlanie ikony obok tekstu
+    justifyContent: "center",
+    backgroundColor: "#615f5fff",  // Kolor Google
+  },
+  googleIcon: {
+    marginRight: 10,  // Odstęp między ikoną a tekstem
+  },
   buttonText: {
-    color: "#black",
+    color: "#fff",
     fontSize: 18,
     fontWeight: "600",
   },
