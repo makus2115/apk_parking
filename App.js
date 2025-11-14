@@ -1,10 +1,12 @@
 // App.js
 import React, { useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
-import { NavigationContainer,
+import {
+  NavigationContainer,
   DefaultTheme,
-  DarkTheme, } from "@react-navigation/native";
-  import { ThemeProvider } from "./theme/ThemeContext";
+  DarkTheme,
+} from "@react-navigation/native";
+import { ThemeProvider } from "./theme/ThemeContext";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import StartScreen from "./screens/StartScreen";
 import LoginScreen from "./screens/LoginScreen";
@@ -12,8 +14,8 @@ import RegisterScreen from "./screens/RegisterScreen";
 import TestScreen from "./screens/TestScreen";
 import ScreenTemplate from "./screens/ScreenTemplate";
 import TicketScreen from "./screens/TicketScreen";
-import TransaktionScreen from "./screens/TransaktionScreen";
-import PayScreen from "./screens/PayScreen";
+import TransactionScreen from "./screens/TransactionScreen";
+import WalletScreen from "./screens/WalletScreen";
 import SettingsScreen from "./screens/SettingsScreen";
 const GREEN = "#8BC34A";
 
@@ -43,7 +45,7 @@ const DarkNavTheme = {
 };
 
 export default function App() {
-  const systemScheme = useColorScheme(); 
+  const systemScheme = useColorScheme();
   const [forceDark, setForceDark] = useState(false);
   const [biometricsEnabled, setBiometricsEnabled] = useState(false);
 
@@ -83,57 +85,57 @@ export default function App() {
     <ThemeProvider value={themeContextValue}>
       <NavigationContainer theme={navigationTheme}>
         <Stack.Navigator screenOptions={{ headerShown: false }}>
-        <Stack.Screen name="Start" component={StartScreen} />
-        <Stack.Screen name="Login" component={LoginScreen} />
-        <Stack.Screen name="Register" component={RegisterScreen} />
-        <Stack.Screen name="Ticket" component={TicketScreen} />
-        <Stack.Screen name="Transaktion" component={TransaktionScreen} />
-        <Stack.Screen name="Pay" component={PayScreen} />
-        <Stack.Screen name="Settings" component={SettingsScreen} />
-        {/* Nowe ekrany testowe */}
-        <Stack.Screen name="Test" component={TestScreen} />
-        <Stack.Screen
-          name="Ekran1"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 1" }}
-        />
-        <Stack.Screen
-          name="Ekran2"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 2" }}
-        />
-        <Stack.Screen
-          name="Ekran3"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 3" }}
-        />
-        <Stack.Screen
-          name="Ekran4"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 4" }}
-        />
-        <Stack.Screen
-          name="Ekran5"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 5" }}
-        />
-        <Stack.Screen
-          name="Ekran6"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 6" }}
-        />
-        <Stack.Screen
-          name="Ekran7"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 7" }}
-        />
-        <Stack.Screen
-          name="Ekran8"
-          component={ScreenTemplate}
-          initialParams={{ title: "Ekran 8" }}
-        />
-      </Stack.Navigator>
-    </NavigationContainer>
-  </ThemeProvider>
+          <Stack.Screen name="Start" component={StartScreen} />
+          <Stack.Screen name="Login" component={LoginScreen} />
+          <Stack.Screen name="Register" component={RegisterScreen} />
+          <Stack.Screen name="Ticket" component={TicketScreen} />
+          <Stack.Screen name="Transaction" component={TransactionScreen} />
+          <Stack.Screen name="Wallet" component={WalletScreen} />
+          <Stack.Screen name="Settings" component={SettingsScreen} />
+          {/* Nowe ekrany testowe */}
+          <Stack.Screen name="Test" component={TestScreen} />
+          <Stack.Screen
+            name="Ekran1"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 1" }}
+          />
+          <Stack.Screen
+            name="Ekran2"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 2" }}
+          />
+          <Stack.Screen
+            name="Ekran3"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 3" }}
+          />
+          <Stack.Screen
+            name="Ekran4"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 4" }}
+          />
+          <Stack.Screen
+            name="Ekran5"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 5" }}
+          />
+          <Stack.Screen
+            name="Ekran6"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 6" }}
+          />
+          <Stack.Screen
+            name="Ekran7"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 7" }}
+          />
+          <Stack.Screen
+            name="Ekran8"
+            component={ScreenTemplate}
+            initialParams={{ title: "Ekran 8" }}
+          />
+        </Stack.Navigator>
+      </NavigationContainer>
+    </ThemeProvider>
   );
 }

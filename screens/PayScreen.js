@@ -18,7 +18,7 @@ import { useFocusEffect } from "@react-navigation/native";
 const BALANCE_KEY = "@parking_balance";
 const HISTORY_KEY = "@parking_topup_history";
 
-export default function PayScreen() {
+export default function WalletScreen() {
   const [balance, setBalance] = useState(0);
   const [amount, setAmount] = useState("10"); //bazowo 10zl
   const [history, setHistory] = useState([]);

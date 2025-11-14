@@ -10,19 +10,18 @@ import {
   Alert,
   Switch,
 } from "react-native";
+import AsyncStorage from "@react-native-async-storage/async-storage";
 
-/** Konfiguracja stawek/stref (PLN za godzinę) */
+const TICKETS_STORAGE_KEY = "@parking_tickets";
+
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
   B: { name: "Strefa B", ratePerHour: 4.0 },
   C: { name: "Strefa C", ratePerHour: 3.0 },
 };
 
-/** Przykładowe tablice pojazdów użytkownika */
-// TODO Dodać wczytywanie z globalnej
 const DEFAULT_PLATES = ["WX 12345", "KR 7J202", "PO 9ABC1"];
 
-/** Pomoc: formatowanie waluty */
 function formatPLN(v) {
   try {
     return new Intl.NumberFormat("pl-PL", {
@@ -36,13 +35,11 @@ function formatPLN(v) {
   }
 }
 
-/** Pomoc: zaokrąglenie w górę do 15-min bloków */
 function ceilToQuarterMinutes(mins) {
   const block = 15;
   return Math.ceil(mins / block) * block;
 }
 
-/** Pomoc: dodawanie minut do daty */
 function addMinutes(date, minutes) {
   const d = new Date(date);
   d.setMinutes(d.getMinutes() + minutes);
@@ -64,14 +61,12 @@ function formatDateTime(d) {
   }
 }
 
-/** Obliczenie ceny: stawka liniowa, rozliczenie co 15 minut */
 function computePricePLN(durationMinutes, ratePerHour) {
   const billable = ceilToQuarterMinutes(Math.max(0, durationMinutes));
   const price = (billable / 60) * ratePerHour;
   return { billable, price: +price.toFixed(2) };
 }
 
-/** Prosty chip */
 const Chip = ({ selected, onPress, children }) => (
   <TouchableOpacity
     onPress={onPress}
@@ -83,16 +78,25 @@ const Chip = ({ selected, onPress, children }) => (
   </TouchableOpacity>
 );
 
-/** Karta sekcyjna */
 const Card = ({ children }) => <View style={styles.card}>{children}</View>;
 
-/** Wiersz podsumowania */
 const Row = ({ label, value, big }) => (
   <View style={styles.row}>
     <Text style={[styles.rowLabel, big && styles.rowBig]}>{label}</Text>
     <Text style={[styles.rowValue, big && styles.rowBig]}>{value}</Text>
   </View>
 );
+
+async function saveTicketGlobal(ticket) {
+  try {
+    const existing = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
+    const parsed = existing ? JSON.parse(existing) : [];
+    const updated = [ticket, ...parsed];
+    await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated));
+  } catch (e) {
+    console.warn("Nie udało się zapisać biletu w AsyncStorage", e);
+  }
+}
 
 export default function ParkingTicketScreen({ navigation }) {
   const [plates, setPlates] = useState(DEFAULT_PLATES);
@@ -102,8 +106,8 @@ export default function ParkingTicketScreen({ navigation }) {
 
   const [zone, setZone] = useState("A");
   const [startNow, setStartNow] = useState(true);
-  const [startOffsetMin, setStartOffsetMin] = useState(0); // jeśli nie "teraz"
-  const [durationMin, setDurationMin] = useState(60); // 15..480
+  const [startOffsetMin, setStartOffsetMin] = useState(0);
+  const [durationMin, setDurationMin] = useState(60);
   const [notifyBeforeEnd, setNotifyBeforeEnd] = useState(true);
   const [loading, setLoading] = useState(false);
 
@@ -123,7 +127,7 @@ export default function ParkingTicketScreen({ navigation }) {
   );
 
   const canShorten = durationMin > 15;
-  const canExtend = durationMin < 8 * 60; // 8h limit na transakcję
+  const canExtend = durationMin < 8 * 60;
 
   function addPlate() {
     const p = newPlate.trim().toUpperCase();
@@ -148,7 +152,7 @@ export default function ParkingTicketScreen({ navigation }) {
     }
     setLoading(true);
     try {
-      await new Promise((r) => setTimeout(r, 800)); // symulacja
+      await new Promise((r) => setTimeout(r, 800));
 
       const payload = {
         plate: selectedPlate,
@@ -161,6 +165,15 @@ export default function ParkingTicketScreen({ navigation }) {
         notifyBeforeEnd,
       };
 
+      const ticket = {
+        id: `${Date.now()}`,
+        status: "ACTIVE",
+        createdAtISO: new Date().toISOString(),
+        ...payload,
+      };
+
+      await saveTicketGlobal(ticket);
+
       Alert.alert(
         "Bilet aktywny",
         `Pojazd: ${payload.plate}\n${payload.zoneName}\nOd: ${formatDateTime(
@@ -168,11 +181,11 @@ export default function ParkingTicketScreen({ navigation }) {
         )}\nDo: ${formatDateTime(endTime)}\nKwota: ${formatPLN(price)}`
       );
 
-      // TODO dodać aktywne bilety do homescreen(opcjonalnie)
-      if (navigation?.navigate) {
-        //navigation.navigate("HomeScreen", { ticket: payload });
-      }
+      // if (navigation?.navigate) {
+      //   navigation.navigate("ParkingTransactionsScreen");
+      // }
     } catch (e) {
+      console.error(e);
       Alert.alert("Błąd", "Nie udało się kupić biletu. Spróbuj ponownie.");
     } finally {
       setLoading(false);
@@ -183,7 +196,6 @@ export default function ParkingTicketScreen({ navigation }) {
     <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
       <Text style={styles.heading}>Kup bilet parkingowy</Text>
 
-      {/* Pojazd */}
       <Card>
         <Text style={styles.label}>Pojazd</Text>
         <View style={styles.rowWrap}>
@@ -231,7 +243,6 @@ export default function ParkingTicketScreen({ navigation }) {
         ) : null}
       </Card>
 
-      {/* Strefa */}
       <Card>
         <Text style={styles.label}>Strefa parkowania</Text>
         <View style={styles.rowWrap}>
@@ -247,7 +258,6 @@ export default function ParkingTicketScreen({ navigation }) {
         </Text>
       </Card>
 
-      {/* Start i czas trwania */}
       <Card>
         <Text style={styles.label}>Rozpoczęcie</Text>
         <View style={styles.toggleRow}>
@@ -316,7 +326,6 @@ export default function ParkingTicketScreen({ navigation }) {
         </Text>
       </Card>
 
-      {/* Przypomnienie */}
       <Card>
         <View style={styles.reminderRow}>
           <View style={{ flex: 1 }}>
@@ -336,7 +345,6 @@ export default function ParkingTicketScreen({ navigation }) {
         </View>
       </Card>
 
-      {/* Podsumowanie */}
       <Card>
         <Text style={styles.label}>Podsumowanie</Text>
         <Row label="Tablice" value={selectedPlate} />
