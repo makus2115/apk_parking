@@ -55,7 +55,7 @@ export default function RegisterScreen({ navigation }) {
     try {
       setLoading(true);
       //API rejestracji
-      //await new Promise((r) => setTimeout(r, 800)); //symulacja
+      await new Promise((r) => setTimeout(r, 800)); //symulacja
       Alert.alert("Sukces", "Konto utworzone! Możesz się zalogować.", [
         {
           text: "OK",
