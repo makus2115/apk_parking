@@ -9,6 +9,8 @@ import TestScreen from "./screens/TestScreen";
 import ScreenTemplate from "./screens/ScreenTemplate";
 import TicketScreen from "./screens/TicketScreen";
 import TransaktionScreen from "./screens/TransaktionScreen";
+import PayScreen from "./screens/PayScreen";
+
 
 const Stack = createNativeStackNavigator();
 
@@ -21,6 +23,7 @@ export default function App() {
         <Stack.Screen name="Register" component={RegisterScreen} />
         <Stack.Screen name="Ticket" component={TicketScreen} />
         <Stack.Screen name="Transaktion" component={TransaktionScreen} />
+        <Stack.Screen name="Pay" component={PayScreen} />
         {/* Nowe ekrany testowe */}
         <Stack.Screen name="Test" component={TestScreen} />
         <Stack.Screen
