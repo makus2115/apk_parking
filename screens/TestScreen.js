@@ -16,7 +16,7 @@ const items = [
   { key: "5", title: "Pay", route: "Pay" },
   { key: "6", title: "Ekran 6", route: "Ekran6" },
   { key: "7", title: "Ekran 7", route: "Ekran7" },
-  { key: "8", title: "Ekran 8", route: "Ekran8" },
+  { key: "8", title: "Settings", route: "Settings" },
 ];
 
 export default function TestScreen({ navigation }) {

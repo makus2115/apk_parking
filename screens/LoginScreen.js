@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useContext, useEffect, useState } from "react";
 import { StatusBar } from "expo-status-bar";
 import {
   View,
@@ -9,11 +9,52 @@ import {
   Alert,
   SafeAreaView,
 } from "react-native";
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import * as LocalAuthentication from "expo-local-authentication";
+import { ThemeContext } from "../theme/ThemeContext";
+
+const GREEN = "#8BC34A";
 
 export default function LoginScreen({ navigation }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const { biometricsEnabled } = useContext(ThemeContext);
+  const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+
+  useEffect(() => {
+    const checkBiometrics = async () => {
+      if (!biometricsEnabled) {
+        setCanUseBiometrics(false);
+        return;
+      }
+      try {
+        const hasHardware = await LocalAuthentication.hasHardwareAsync();
+        const isEnrolled = await LocalAuthentication.isEnrolledAsync();
+        setCanUseBiometrics(hasHardware && isEnrolled);
+      } catch (e) {
+        setCanUseBiometrics(false);
+      }
+    };
+
+    checkBiometrics();
+  }, [biometricsEnabled]);
+
+  const handleBiometricLogin = async () => {
+    try {
+      const result = await LocalAuthentication.authenticateAsync({
+        promptMessage: "Zaloguj się biometrycznie",
+        cancelLabel: "Anuluj",
+      });
+
+      if (result.success) {
+        navigation.replace("Start");
+      } else {
+        Alert.alert("Niepowodzenie", "Nie udało się potwierdzić tożsamości.");
+      }
+    } catch (e) {
+      Alert.alert("Błąd", "Logowanie biometryczne jest niedostępne.");
+    }
+  };
 
   const handleLogin = () => {
     if (!email || !password) {
@@ -59,12 +100,35 @@ export default function LoginScreen({ navigation }) {
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.googleButton]} 
+          style={[styles.button, styles.googleButton]}
           onPress={handleGoogleLogin}
         >
-          <MaterialCommunityIcons name="google" size={24} color="white" style={styles.googleIcon} />
+          <MaterialCommunityIcons
+            name="google"
+            size={24}
+            color="white"
+            style={styles.googleIcon}
+          />
           <Text style={styles.buttonText}>Zaloguj przez Google</Text>
         </TouchableOpacity>
+
+        {canUseBiometrics && (
+          <TouchableOpacity
+            style={styles.biometricButton}
+            onPress={handleBiometricLogin}
+            activeOpacity={0.85}
+          >
+            <MaterialCommunityIcons
+              name="fingerprint"
+              size={24}
+              color={GREEN}
+              style={styles.biometricIcon}
+            />
+            <Text style={styles.biometricButtonText}>
+              Zaloguj odciskiem palca / Face ID
+            </Text>
+          </TouchableOpacity>
+        )}
 
         <TouchableOpacity
           onPress={() => navigation.navigate("Register")}
@@ -76,8 +140,6 @@ export default function LoginScreen({ navigation }) {
     </SafeAreaView>
   );
 }
-
-const GREEN = "#8BC34A";
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },
@@ -112,12 +174,12 @@ const styles = StyleSheet.create({
     marginTop: 10,
   },
   googleButton: {
-    flexDirection: "row",  // Umożliwia wyświetlanie ikony obok tekstu
+    flexDirection: "row",
     justifyContent: "center",
-    backgroundColor: "#615f5fff",  // Kolor Google
+    backgroundColor: "#615f5fff",
   },
   googleIcon: {
-    marginRight: 10,  // Odstęp między ikoną a tekstem
+    marginRight: 10,
   },
   buttonText: {
     color: "#fff",
@@ -128,5 +190,25 @@ const styles = StyleSheet.create({
     color: "#aaa",
     marginTop: 20,
     fontSize: 14,
+  },
+  biometricButton: {
+    width: "100%",
+    marginTop: 10,
+    padding: 15,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: GREEN,
+    alignItems: "center",
+    justifyContent: "center",
+    flexDirection: "row",
+    backgroundColor: "transparent",
+  },
+  biometricIcon: {
+    marginRight: 10,
+  },
+  biometricButtonText: {
+    color: GREEN,
+    fontSize: 16,
+    fontWeight: "600",
   },
 });
