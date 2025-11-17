@@ -1,28 +1,51 @@
-// screens/ParkingTicketScreen.js
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  ScrollView,
-  Alert,
-  Switch,
+    Alert,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const TICKETS_STORAGE_KEY = "@parking_tickets";
+const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
+
+const GREEN = "#8BC34A";
 
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
   B: { name: "Strefa B", ratePerHour: 4.0 },
   C: { name: "Strefa C", ratePerHour: 3.0 },
+} as const;
+
+type ZoneKey = keyof typeof ZONES;
+
+const DEFAULT_PLATES: string[] = ["WX 12345", "KR 7J202", "PO 9ABC1"];
+
+type ParkingTicket = {
+  id: string;
+  status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+  createdAtISO: string;
+  plate: string;
+  zone: ZoneKey;
+  zoneName: string;
+  startISO: string;
+  endISO: string;
+  durationMin: number;
+  amount: number;
+  notifyBeforeEnd: boolean;
 };
 
-const DEFAULT_PLATES = ["WX 12345", "KR 7J202", "PO 9ABC1"];
+type ParkingTicketScreenProps = {
+  navigation?: {
+    navigate?: (route: string) => void;
+  };
+};
 
-function formatPLN(v) {
+function formatPLN(v: number): string {
   try {
     return new Intl.NumberFormat("pl-PL", {
       style: "currency",
@@ -35,18 +58,18 @@ function formatPLN(v) {
   }
 }
 
-function ceilToQuarterMinutes(mins) {
+function ceilToQuarterMinutes(mins: number): number {
   const block = 15;
   return Math.ceil(mins / block) * block;
 }
 
-function addMinutes(date, minutes) {
+function addMinutes(date: Date, minutes: number): Date {
   const d = new Date(date);
   d.setMinutes(d.getMinutes() + minutes);
   return d;
 }
 
-function formatDateTime(d) {
+function formatDateTime(d: Date): string {
   try {
     return d.toLocaleString("pl-PL", {
       weekday: "short",
@@ -61,13 +84,22 @@ function formatDateTime(d) {
   }
 }
 
-function computePricePLN(durationMinutes, ratePerHour) {
+function computePricePLN(
+  durationMinutes: number,
+  ratePerHour: number
+): { billable: number; price: number } {
   const billable = ceilToQuarterMinutes(Math.max(0, durationMinutes));
   const price = (billable / 60) * ratePerHour;
   return { billable, price: +price.toFixed(2) };
 }
 
-const Chip = ({ selected, onPress, children }) => (
+type ChipProps = {
+  selected: boolean;
+  onPress: () => void;
+  children: React.ReactNode;
+};
+
+const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
   <TouchableOpacity
     onPress={onPress}
     style={[styles.chip, selected && styles.chipSelected]}
@@ -78,19 +110,31 @@ const Chip = ({ selected, onPress, children }) => (
   </TouchableOpacity>
 );
 
-const Card = ({ children }) => <View style={styles.card}>{children}</View>;
+type CardProps = {
+  children: React.ReactNode;
+};
 
-const Row = ({ label, value, big }) => (
+const Card: React.FC<CardProps> = ({ children }) => (
+  <View style={styles.card}>{children}</View>
+);
+
+type RowProps = {
+  label: string;
+  value: string | number;
+  big?: boolean;
+};
+
+const Row: React.FC<RowProps> = ({ label, value, big }) => (
   <View style={styles.row}>
     <Text style={[styles.rowLabel, big && styles.rowBig]}>{label}</Text>
     <Text style={[styles.rowValue, big && styles.rowBig]}>{value}</Text>
   </View>
 );
 
-async function saveTicketGlobal(ticket) {
+async function saveTicketGlobal(ticket: ParkingTicket): Promise<void> {
   try {
     const existing = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
-    const parsed = existing ? JSON.parse(existing) : [];
+    const parsed: ParkingTicket[] = existing ? JSON.parse(existing) : [];
     const updated = [ticket, ...parsed];
     await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated));
   } catch (e) {
@@ -98,26 +142,30 @@ async function saveTicketGlobal(ticket) {
   }
 }
 
-export default function ParkingTicketScreen({ navigation }) {
-  const [plates, setPlates] = useState(DEFAULT_PLATES);
-  const [selectedPlate, setSelectedPlate] = useState(plates[0]);
-  const [addingPlate, setAddingPlate] = useState(false);
-  const [newPlate, setNewPlate] = useState("");
+const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
+  navigation,
+}) => {
+  const [plates, setPlates] = useState<string[]>(DEFAULT_PLATES);
+  const [selectedPlate, setSelectedPlate] = useState<string>(plates[0]);
+  const [addingPlate, setAddingPlate] = useState<boolean>(false);
+  const [newPlate, setNewPlate] = useState<string>("");
 
-  const [zone, setZone] = useState("A");
-  const [startNow, setStartNow] = useState(true);
-  const [startOffsetMin, setStartOffsetMin] = useState(0);
-  const [durationMin, setDurationMin] = useState(60);
-  const [notifyBeforeEnd, setNotifyBeforeEnd] = useState(true);
-  const [loading, setLoading] = useState(false);
+  const [zone, setZone] = useState<ZoneKey>("A");
+  const [startNow, setStartNow] = useState<boolean>(true);
+  // trzymamy jako string, bo użytkownik wpisuje tekst
+  const [startOffsetMin, setStartOffsetMin] = useState<string>("0");
+  const [durationMin, setDurationMin] = useState<number>(60);
+  const [notifyBeforeEnd, setNotifyBeforeEnd] = useState<boolean>(true);
+  const [loading, setLoading] = useState<boolean>(false);
 
   const now = new Date();
+  const startOffsetParsed = Number.parseInt(
+    startOffsetMin || "0",
+    10
+  );
   const startTime = startNow
     ? now
-    : addMinutes(
-        now,
-        Math.max(0, Math.min(720, parseInt(startOffsetMin || 0, 10)))
-      );
+    : addMinutes(now, Math.max(0, Math.min(720, startOffsetParsed)));
   const endTime = addMinutes(startTime, Math.max(15, durationMin));
 
   const rate = ZONES[zone].ratePerHour;
@@ -129,7 +177,7 @@ export default function ParkingTicketScreen({ navigation }) {
   const canShorten = durationMin > 15;
   const canExtend = durationMin < 8 * 60;
 
-  function addPlate() {
+  function addPlate(): void {
     const p = newPlate.trim().toUpperCase();
     if (!p) {
       Alert.alert("Tablica", "Wpisz numer rejestracyjny.");
@@ -145,7 +193,7 @@ export default function ParkingTicketScreen({ navigation }) {
     setAddingPlate(false);
   }
 
-  async function handleBuy() {
+  async function handleBuy(): Promise<void> {
     if (!selectedPlate) {
       Alert.alert("Błąd", "Wybierz pojazd.");
       return;
@@ -165,7 +213,7 @@ export default function ParkingTicketScreen({ navigation }) {
         notifyBeforeEnd,
       };
 
-      const ticket = {
+      const ticket: ParkingTicket = {
         id: `${Date.now()}`,
         status: "ACTIVE",
         createdAtISO: new Date().toISOString(),
@@ -247,7 +295,11 @@ export default function ParkingTicketScreen({ navigation }) {
         <Text style={styles.label}>Strefa parkowania</Text>
         <View style={styles.rowWrap}>
           {Object.entries(ZONES).map(([k, v]) => (
-            <Chip key={k} selected={zone === k} onPress={() => setZone(k)}>
+            <Chip
+              key={k}
+              selected={zone === (k as ZoneKey)}
+              onPress={() => setZone(k as ZoneKey)}
+            >
               {k} • {v.name.replace(/^Strefa [A-Z] ?/, "")} •{" "}
               {formatPLN(v.ratePerHour)}/h
             </Chip>
@@ -289,7 +341,7 @@ export default function ParkingTicketScreen({ navigation }) {
               style={[styles.input, styles.inputSmall]}
               placeholder="min"
               placeholderTextColor="#aaa"
-              value={String(startOffsetMin)}
+              value={startOffsetMin}
               onChangeText={(t) => setStartOffsetMin(t.replace(/[^\d]/g, ""))}
             />
             <Text style={styles.inlineSuffix}>min</Text>
@@ -367,9 +419,10 @@ export default function ParkingTicketScreen({ navigation }) {
       <View style={{ height: 28 }} />
     </ScrollView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default ParkingTicketScreen;
+
 const styles = StyleSheet.create({
   screen: { flex: 1, backgroundColor: "#101010" },
   container: { padding: 16, paddingBottom: 40 },

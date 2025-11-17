@@ -1,26 +1,36 @@
-import React, { useMemo, useState } from "react";
 import { StatusBar } from "expo-status-bar";
+import React, { useMemo, useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
-  SafeAreaView,
+    Alert,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-export default function RegisterScreen({ navigation }) {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirm, setConfirm] = useState("");
-  const [showPass, setShowPass] = useState(false);
-  const [accepted, setAccepted] = useState(false);
-  const [loading, setLoading] = useState(false);
+type RegisterScreenProps = {
+  navigation: any;
+};
 
-  const passwordStrength = useMemo(() => {
-    // siła hasla
+interface PasswordStrength {
+  score: number;
+  label: string;
+}
+
+const GREEN = "#8BC34A";
+
+const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
+  const [name, setName] = useState<string>("");
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const [confirm, setConfirm] = useState<string>("");
+  const [showPass, setShowPass] = useState<boolean>(false);
+  const [accepted, setAccepted] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
+
+  const passwordStrength = useMemo<PasswordStrength>(() => {
     let score = 0;
     if (password.length >= 8) score++;
     if (/[A-Z]/.test(password)) score++;
@@ -36,7 +46,7 @@ export default function RegisterScreen({ navigation }) {
     return { score, label: labels[score] || labels[0] };
   }, [password]);
 
-  const validate = () => {
+  const validate = (): string | null => {
     const emailOk = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
     if (!name.trim()) return "Podaj imię i nazwisko (lub nick).";
     if (!emailOk) return "Podaj poprawny adres e-mail.";
@@ -46,7 +56,7 @@ export default function RegisterScreen({ navigation }) {
     return null;
   };
 
-  const handleRegister = async () => {
+  const handleRegister = async (): Promise<void> => {
     const err = validate();
     if (err) {
       Alert.alert("Błąd", err);
@@ -54,8 +64,8 @@ export default function RegisterScreen({ navigation }) {
     }
     try {
       setLoading(true);
-      //API rejestracji
-      await new Promise((r) => setTimeout(r, 800)); //symulacja
+      // TODO: API rejestracji
+      await new Promise((r) => setTimeout(r, 800)); // symulacja
       Alert.alert("Sukces", "Konto utworzone! Możesz się zalogować.", [
         {
           text: "OK",
@@ -167,9 +177,9 @@ export default function RegisterScreen({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default RegisterScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },

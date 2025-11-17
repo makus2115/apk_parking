@@ -1,19 +1,32 @@
-import React, { useContext, useMemo } from "react";
 import { StatusBar } from "expo-status-bar";
+import React, { useContext, useMemo } from "react";
 import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  Switch,
-  TouchableOpacity,
-  ScrollView,
+    SafeAreaView,
+    ScrollView,
+    StyleSheet,
+    Switch,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
 
-export default function SettingsScreen({ navigation }) {
+type SettingsScreenProps = {
+  navigation: any;
+};
+
+type ThemeColors = {
+  background: string;
+  card: string;
+  text: string;
+  subtitle: string;
+  border: string;
+  primary: string;
+};
+
+const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
   const {
     isDark,
     forceDark,
@@ -25,11 +38,11 @@ export default function SettingsScreen({ navigation }) {
 
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const handleDarkModeToggle = (value) => {
+  const handleDarkModeToggle = (value: boolean) => {
     setForceDark(value);
   };
 
-  const handleBiometricsToggle = (value) => {
+  const handleBiometricsToggle = (value: boolean) => {
     setBiometricsEnabled(value);
   };
 
@@ -47,7 +60,6 @@ export default function SettingsScreen({ navigation }) {
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
       >
-        {}
         <Text style={styles.sectionTitle}>Ogólne</Text>
 
         <View style={styles.row}>
@@ -65,7 +77,6 @@ export default function SettingsScreen({ navigation }) {
           />
         </View>
 
-        {/* Sekcja: Bezpieczeństwo */}
         <Text style={styles.sectionTitle}>Bezpieczeństwo</Text>
 
         <View style={styles.row}>
@@ -84,7 +95,6 @@ export default function SettingsScreen({ navigation }) {
         </View>
       </ScrollView>
 
-      {/* Przyciski na dole */}
       <View style={styles.footer}>
         <TouchableOpacity
           style={[styles.btn, styles.btnOutline]}
@@ -104,9 +114,11 @@ export default function SettingsScreen({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-const createStyles = (colors) =>
+export default SettingsScreen;
+
+const createStyles = (colors: ThemeColors) =>
   StyleSheet.create({
     root: {
       flex: 1,

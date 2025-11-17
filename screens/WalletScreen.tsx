@@ -1,30 +1,38 @@
-import React, { useState, useCallback } from "react";
-import { StatusBar } from "expo-status-bar";
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  SafeAreaView,
-  FlatList,
-  Alert,
-  ActivityIndicator,
-} from "react-native";
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { StatusBar } from "expo-status-bar";
+import React, { useCallback, useState } from "react";
+import {
+    ActivityIndicator,
+    Alert,
+    FlatList,
+    ListRenderItem,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-const BALANCE_KEY = "@parking_balance";
-const HISTORY_KEY = "@parking_topup_history";
+const BALANCE_KEY = "@parking_balance" as const;
+const HISTORY_KEY = "@parking_topup_history" as const;
+const GREEN = "#8BC34A";
 
-export default function WalletScreen() {
-  const [balance, setBalance] = useState(0);
-  const [amount, setAmount] = useState("10"); //bazowo 10zl
-  const [history, setHistory] = useState([]);
-  const [loading, setLoading] = useState(true);
+type TopUpEntry = {
+  id: string;
+  amount: number;
+  date: string;
+};
 
-  //wczytywanie danych przy każdym wejściu na ekran
+const WalletScreen: React.FC = () => {
+  const [balance, setBalance] = useState<number>(0);
+  const [amount, setAmount] = useState<string>("10"); // bazowo 10 zł
+  const [history, setHistory] = useState<TopUpEntry[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+
+  // wczytywanie danych przy każdym wejściu na ekran
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -57,7 +65,7 @@ export default function WalletScreen() {
       };
 
       setLoading(true);
-      loadData();
+      void loadData();
 
       return () => {
         isActive = false;
@@ -65,7 +73,7 @@ export default function WalletScreen() {
     }, [])
   );
 
-  const saveBalance = async (newBalance) => {
+  const saveBalance = async (newBalance: number): Promise<void> => {
     try {
       await AsyncStorage.setItem(BALANCE_KEY, String(newBalance));
     } catch (e) {
@@ -73,7 +81,7 @@ export default function WalletScreen() {
     }
   };
 
-  const saveHistory = async (newHistory) => {
+  const saveHistory = async (newHistory: TopUpEntry[]): Promise<void> => {
     try {
       await AsyncStorage.setItem(HISTORY_KEY, JSON.stringify(newHistory));
     } catch (e) {
@@ -81,11 +89,11 @@ export default function WalletScreen() {
     }
   };
 
-  const handleTopUp = async () => {
+  const handleTopUp = async (): Promise<void> => {
     const normalized = amount.replace(",", ".");
     const value = parseFloat(normalized);
 
-    if (isNaN(value) || value <= 0) {
+    if (Number.isNaN(value) || value <= 0) {
       Alert.alert("Błąd", "Wpisz prawidłową kwotę doładowania.");
       return;
     }
@@ -94,7 +102,7 @@ export default function WalletScreen() {
     setBalance(newBalance);
 
     const now = new Date();
-    const newEntry = {
+    const newEntry: TopUpEntry = {
       id: Date.now().toString(),
       amount: value,
       date: now.toLocaleString("pl-PL"),
@@ -103,12 +111,11 @@ export default function WalletScreen() {
     const newHistory = [newEntry, ...history];
     setHistory(newHistory);
 
-    //zapis do pamięci
     await saveBalance(newBalance);
     await saveHistory(newHistory);
   };
 
-  const renderItem = ({ item }) => (
+  const renderItem: ListRenderItem<TopUpEntry> = ({ item }) => (
     <View style={styles.historyItem}>
       <Text style={styles.historyAmount}>{item.amount.toFixed(2)} zł</Text>
       <Text style={styles.historyDate}>{item.date}</Text>
@@ -125,7 +132,7 @@ export default function WalletScreen() {
             { justifyContent: "center", alignItems: "center" },
           ]}
         >
-          <ActivityIndicator size="large" color="#8BC34A" />
+          <ActivityIndicator size="large" color={GREEN} />
           <Text style={{ color: "#fff", marginTop: 10 }}>
             Wczytywanie danych...
           </Text>
@@ -143,7 +150,7 @@ export default function WalletScreen() {
             <MaterialCommunityIcons
               name="wallet"
               size={28}
-              color="#8BC34A"
+              color={GREEN}
               style={{ marginRight: 10 }}
             />
             <Text style={styles.balanceLabel}>Dostępne saldo</Text>
@@ -191,9 +198,9 @@ export default function WalletScreen() {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default WalletScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },

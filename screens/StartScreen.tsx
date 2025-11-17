@@ -1,16 +1,24 @@
-import React from "react";
-import { StatusBar } from "expo-status-bar";
-import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  ImageBackground,
-} from "react-native";
 import AntDesign from "@expo/vector-icons/AntDesign";
+import { StatusBar } from "expo-status-bar";
+import React from "react";
+import {
+  ImageBackground,
+  SafeAreaView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-export default function StartScreen({ navigation }) {
+const GREEN = "#8BC34A";
+const OVERLAY = "rgba(0,0,0,0.55)";
+
+type StartScreenProps = {
+  //StackNavigationProp<RootStackParamList, "Start">
+  navigation: any;
+};
+
+const StartScreen: React.FC<StartScreenProps> = ({ navigation }) => {
   return (
     <SafeAreaView style={styles.root}>
       <StatusBar style="light" />
@@ -44,13 +52,13 @@ export default function StartScreen({ navigation }) {
 
         {/* Przycisk tymczasowy */}
         <View style={styles.centerButtonContainer}>
-<TouchableOpacity
-  style={styles.testButton}
-  onPress={() => navigation.navigate("Test")}
-  activeOpacity={0.8}
->
-  <Text style={styles.testButtonText}>Test ekranów</Text>
-</TouchableOpacity>
+          <TouchableOpacity
+            style={styles.testButton}
+            onPress={() => navigation.navigate("Test")}
+            activeOpacity={0.8}
+          >
+            <Text style={styles.testButtonText}>Test ekranów</Text>
+          </TouchableOpacity>
         </View>
 
         {/* STOPKA Z PRZYCISKAMI */}
@@ -78,10 +86,9 @@ export default function StartScreen({ navigation }) {
       </ImageBackground>
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
-const OVERLAY = "rgba(0,0,0,0.55)";
+export default StartScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },

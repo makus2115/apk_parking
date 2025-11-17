@@ -1,25 +1,47 @@
-// App.js
+import {
+    DarkTheme,
+    DefaultTheme,
+    NavigationContainer,
+} from "@react-navigation/native";
+import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
-import {
-  NavigationContainer,
-  DefaultTheme,
-  DarkTheme,
-} from "@react-navigation/native";
 import { ThemeProvider } from "./theme/ThemeContext";
-import { createNativeStackNavigator } from "@react-navigation/native-stack";
-import StartScreen from "./screens/StartScreen";
+
 import LoginScreen from "./screens/LoginScreen";
 import RegisterScreen from "./screens/RegisterScreen";
-import TestScreen from "./screens/TestScreen";
 import ScreenTemplate from "./screens/ScreenTemplate";
+import SettingsScreen from "./screens/SettingsScreen";
+import StartScreen from "./screens/StartScreen";
+import TestScreen from "./screens/TestScreen";
 import TicketScreen from "./screens/TicketScreen";
 import TransactionScreen from "./screens/TransactionScreen";
 import WalletScreen from "./screens/WalletScreen";
-import SettingsScreen from "./screens/SettingsScreen";
+
 const GREEN = "#8BC34A";
 
-const Stack = createNativeStackNavigator();
+// Typy tras dla stosu nawigacji
+export type RootStackParamList = {
+  Start: undefined;
+  Login: undefined;
+  Register: undefined;
+  Ticket: undefined;
+  Transaction: undefined;
+  Wallet: undefined;
+  Settings: undefined;
+  Test: undefined;
+  Ekran1: { title: string };
+  Ekran2: { title: string };
+  Ekran3: { title: string };
+  Ekran4: { title: string };
+  Ekran5: { title: string };
+  Ekran6: { title: string };
+  Ekran7: { title: string };
+  Ekran8: { title: string };
+};
+
+const Stack = createNativeStackNavigator<RootStackParamList>();
+
 const LightNavTheme = {
   ...DefaultTheme,
   colors: {
@@ -44,10 +66,10 @@ const DarkNavTheme = {
   },
 };
 
-export default function App() {
+const App: React.FC = () => {
   const systemScheme = useColorScheme();
-  const [forceDark, setForceDark] = useState(false);
-  const [biometricsEnabled, setBiometricsEnabled] = useState(false);
+  const [forceDark, setForceDark] = useState<boolean>(false);
+  const [biometricsEnabled, setBiometricsEnabled] = useState<boolean>(false);
 
   const isDark = forceDark || systemScheme === "dark";
 
@@ -138,4 +160,6 @@ export default function App() {
       </NavigationContainer>
     </ThemeProvider>
   );
-}
+};
+
+export default App;

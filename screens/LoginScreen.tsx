@@ -1,25 +1,45 @@
-import React, { useContext, useEffect, useState } from "react";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
+import { StackNavigationProp } from "@react-navigation/stack";
+import * as LocalAuthentication from "expo-local-authentication";
 import { StatusBar } from "expo-status-bar";
+import React, { useContext, useEffect, useState } from "react";
 import {
-  View,
+  Alert,
+  SafeAreaView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  SafeAreaView,
+  View,
 } from "react-native";
-import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
-import * as LocalAuthentication from "expo-local-authentication";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
 
-export default function LoginScreen({ navigation }) {
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const { biometricsEnabled } = useContext(ThemeContext);
-  const [canUseBiometrics, setCanUseBiometrics] = useState(false);
+type RootStackParamList = {
+  Start: undefined;
+  Register: undefined;
+  Login: undefined;
+};
+
+type LoginScreenNavigationProp = StackNavigationProp<
+  RootStackParamList,
+  "Login"
+>;
+
+interface LoginScreenProps {
+  navigation: LoginScreenNavigationProp;
+}
+
+interface ThemeContextValue {
+  biometricsEnabled: boolean;
+}
+
+const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+  const [email, setEmail] = useState<string>("");
+  const [password, setPassword] = useState<string>("");
+  const { biometricsEnabled } = useContext(ThemeContext) as ThemeContextValue;
+  const [canUseBiometrics, setCanUseBiometrics] = useState<boolean>(false);
 
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -36,10 +56,10 @@ export default function LoginScreen({ navigation }) {
       }
     };
 
-    checkBiometrics();
+    void checkBiometrics();
   }, [biometricsEnabled]);
 
-  const handleBiometricLogin = async () => {
+  const handleBiometricLogin = async (): Promise<void> => {
     try {
       const result = await LocalAuthentication.authenticateAsync({
         promptMessage: "Zaloguj się biometrycznie",
@@ -56,17 +76,17 @@ export default function LoginScreen({ navigation }) {
     }
   };
 
-  const handleLogin = () => {
+  const handleLogin = (): void => {
     if (!email || !password) {
       Alert.alert("Błąd", "Proszę wprowadzić e-mail i hasło.");
       return;
     }
-    // API
+    // TODO: API
     Alert.alert("Logowanie", `Zalogowano jako ${email}`);
   };
 
-  const handleGoogleLogin = () => {
-    // API Google login
+  const handleGoogleLogin = (): void => {
+    // TODO: API Google
     Alert.alert("Logowanie", "Zalogowano przez Google");
   };
 
@@ -139,7 +159,9 @@ export default function LoginScreen({ navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+};
+
+export default LoginScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },
@@ -185,6 +207,9 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 18,
     fontWeight: "600",
+  },
+  linkBtn: {
+    marginTop: 10,
   },
   link: {
     color: "#aaa",

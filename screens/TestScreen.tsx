@@ -1,14 +1,23 @@
 import React from "react";
 import {
-  SafeAreaView,
-  View,
-  Text,
-  StyleSheet,
-  TouchableOpacity,
-  FlatList,
+    FlatList,
+    ListRenderItem,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
 
-const items = [
+const GREEN = "#8BC34A";
+
+type TestItem = {
+  key: string;
+  title: string;
+  route: string;
+};
+
+const items: TestItem[] = [
   { key: "1", title: "Login", route: "Login" },
   { key: "2", title: "Register", route: "Register" },
   { key: "3", title: "TicketScreen", route: "Ticket" },
@@ -19,8 +28,12 @@ const items = [
   { key: "8", title: "Settings", route: "Settings" },
 ];
 
-export default function TestScreen({ navigation }) {
-  const renderItem = ({ item }) => (
+type TestScreenProps = {
+  navigation: any;
+};
+
+const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
+  const renderItem: ListRenderItem<TestItem> = ({ item }) => (
     <TouchableOpacity
       style={styles.tile}
       activeOpacity={0.85}
@@ -47,9 +60,9 @@ export default function TestScreen({ navigation }) {
       />
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default TestScreen;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#101010" },

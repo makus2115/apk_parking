@@ -1,25 +1,42 @@
-// screens/ParkingTransactionsScreen.js
+// screens/ParkingTransactionsScreen.tsx
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
-  View,
-  Text,
-  FlatList,
-  StyleSheet,
-  SafeAreaView,
-  TouchableOpacity,
-  ActivityIndicator,
+    ActivityIndicator,
+    FlatList,
+    ListRenderItem,
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
 } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 
-const TICKETS_STORAGE_KEY = "@parking_tickets";
+const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
 
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
   B: { name: "Strefa B", ratePerHour: 4.0 },
   C: { name: "Strefa C", ratePerHour: 3.0 },
+} as const;
+
+type ZoneKey = keyof typeof ZONES;
+
+type ParkingTicket = {
+  id: string;
+  status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+  createdAtISO: string;
+  plate: string;
+  zone: ZoneKey;
+  zoneName?: string;
+  startISO: string;
+  endISO: string;
+  durationMin: number;
+  amount: number;
+  notifyBeforeEnd: boolean;
 };
 
-function formatPLN(v) {
+function formatPLN(v: number): string {
   try {
     return new Intl.NumberFormat("pl-PL", {
       style: "currency",
@@ -32,8 +49,8 @@ function formatPLN(v) {
   }
 }
 
-function formatCzasPostoju(czasPostoju) {
-  const mins = Math.max(0, czasPostoju || 0);
+function formatCzasPostoju(czasPostoju?: number): string {
+  const mins = Math.max(0, czasPostoju ?? 0);
   const godziny = Math.floor(mins / 60);
   const minuty = mins % 60;
   let wynik = "";
@@ -42,7 +59,7 @@ function formatCzasPostoju(czasPostoju) {
   return wynik.trim() || "0 min.";
 }
 
-function formatDateTime(d) {
+function formatDateTime(d: Date): string {
   try {
     return d.toLocaleString("pl-PL", {
       hour: "2-digit",
@@ -56,37 +73,40 @@ function formatDateTime(d) {
   }
 }
 
-function addMinutes(date, minutes) {
+function addMinutes(date: Date, minutes: number): Date {
   const d = new Date(date);
   d.setMinutes(d.getMinutes() + minutes);
   return d;
 }
 
-function ceilToQuarterMinutes(mins) {
+function ceilToQuarterMinutes(mins: number): number {
   const block = 15;
   return Math.ceil(mins / block) * block;
 }
 
-function computePricePLN(durationMinutes, ratePerHour) {
+function computePricePLN(
+  durationMinutes: number,
+  ratePerHour: number
+): { billable: number; price: number } {
   const billable = ceilToQuarterMinutes(Math.max(0, durationMinutes));
   const price = (billable / 60) * ratePerHour;
   return { billable, price: +price.toFixed(2) };
 }
 
-function isTicketActive(ticket) {
+function isTicketActive(ticket: ParkingTicket): boolean {
   const now = new Date();
   const start = new Date(ticket.startISO);
   const end = new Date(ticket.endISO);
   return now >= start && now < end;
 }
 
-function isTicketFuture(ticket) {
+function isTicketFuture(ticket: ParkingTicket): boolean {
   const now = new Date();
   const start = new Date(ticket.startISO);
   return now < start;
 }
 
-function getRemainingMinutes(ticket) {
+function getRemainingMinutes(ticket: ParkingTicket): number {
   const now = new Date();
   const end = new Date(ticket.endISO);
   const diffMs = end.getTime() - now.getTime();
@@ -94,22 +114,25 @@ function getRemainingMinutes(ticket) {
   return diffMin > 0 ? diffMin : 0;
 }
 
-export default function ParkingTransactionsScreen() {
-  const [tickets, setTickets] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [expandedId, setExpandedId] = useState(null);
+const GREEN = "#8BC34A";
+
+const ParkingTransactionsScreen: React.FC = () => {
+  const [tickets, setTickets] = useState<ParkingTicket[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
 
   useEffect(() => {
-    loadTickets();
+    void loadTickets();
   }, []);
 
-  async function loadTickets() {
+  async function loadTickets(): Promise<void> {
     try {
       setLoading(true);
       const stored = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
-      const parsed = stored ? JSON.parse(stored) : [];
+      const parsed: ParkingTicket[] = stored ? JSON.parse(stored) : [];
       const sorted = parsed.sort(
-        (a, b) => new Date(b.startISO) - new Date(a.startISO)
+        (a, b) =>
+          new Date(b.startISO).getTime() - new Date(a.startISO).getTime()
       );
       setTickets(sorted);
     } catch (e) {
@@ -120,11 +143,11 @@ export default function ParkingTransactionsScreen() {
     }
   }
 
-  function toggleMoreInfo(id) {
+  function toggleMoreInfo(id: string): void {
     setExpandedId((prev) => (prev === id ? null : id));
   }
 
-  async function handleExtend(id) {
+  async function handleExtend(id: string): Promise<void> {
     const EXTENSION_MINUTES = 15;
     setTickets((prev) => {
       const updated = prev.map((t) => {
@@ -152,7 +175,7 @@ export default function ParkingTransactionsScreen() {
     });
   }
 
-  const renderItem = ({ item }) => {
+  const renderItem: ListRenderItem<ParkingTicket> = ({ item }) => {
     const active = isTicketActive(item);
     const future = isTicketFuture(item);
     const remaining = active ? getRemainingMinutes(item) : 0;
@@ -230,7 +253,8 @@ export default function ParkingTransactionsScreen() {
               Łączny czas: {formatCzasPostoju(item.durationMin)}
             </Text>
             <Text style={styles.moreInfoText}>
-              Powiadomienie przed końcem: {item.notifyBeforeEnd ? "tak" : "nie"}
+              Powiadomienie przed końcem:{" "}
+              {item.notifyBeforeEnd ? "tak" : "nie"}
             </Text>
           </View>
         )}
@@ -267,9 +291,9 @@ export default function ParkingTransactionsScreen() {
       )}
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default ParkingTransactionsScreen;
 
 const styles = StyleSheet.create({
   container: {

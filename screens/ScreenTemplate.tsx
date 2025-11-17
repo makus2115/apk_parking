@@ -1,7 +1,24 @@
 import React from "react";
-import { SafeAreaView, View, Text, StyleSheet, TouchableOpacity } from "react-native";
+import {
+    SafeAreaView,
+    StyleSheet,
+    Text,
+    TouchableOpacity,
+    View,
+} from "react-native";
 
-export default function ScreenTemplate({ route, navigation }) {
+const GREEN = "#8BC34A";
+
+type ScreenTemplateProps = {
+  route?: {
+    params?: {
+      title?: string;
+    };
+  };
+  navigation: any;
+};
+
+const ScreenTemplate: React.FC<ScreenTemplateProps> = ({ route, navigation }) => {
   const title = route?.params?.title ?? "Ekran";
 
   return (
@@ -34,9 +51,9 @@ export default function ScreenTemplate({ route, navigation }) {
       </View>
     </SafeAreaView>
   );
-}
+};
 
-const GREEN = "#8BC34A";
+export default ScreenTemplate;
 
 const styles = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#101010" },
