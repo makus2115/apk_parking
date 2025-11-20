@@ -40,7 +40,7 @@ const ScreenTemplate: React.FC<ScreenTemplateProps> = ({ route, navigation }) =>
           {/* Przycisk powrotu do TestScreen */}
           <TouchableOpacity
             style={[styles.btn, styles.btnOutline]}
-            onPress={() => navigation.navigate("Test")}
+            onPress={() => navigation.navigate("Home")}
             activeOpacity={0.85}
           >
             <Text style={[styles.btnText, styles.btnTextOutline]}>

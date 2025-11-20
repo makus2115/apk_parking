@@ -13,10 +13,11 @@ import RegisterScreen from "./screens/RegisterScreen";
 import ScreenTemplate from "./screens/ScreenTemplate";
 import SettingsScreen from "./screens/SettingsScreen";
 import StartScreen from "./screens/StartScreen";
-import TestScreen from "./screens/TestScreen";
+import HomeScreen from "./screens/HomeScreen";
 import TicketScreen from "./screens/TicketScreen";
 import TransactionScreen from "./screens/TransactionScreen";
 import WalletScreen from "./screens/WalletScreen";
+import CarScreen from "./screens/CarScreen";
 
 const GREEN = "#8BC34A";
 
@@ -29,7 +30,8 @@ export type RootStackParamList = {
   Transaction: undefined;
   Wallet: undefined;
   Settings: undefined;
-  Test: undefined;
+  Home: undefined;
+  Car: undefined;
   Ekran1: { title: string };
   Ekran2: { title: string };
   Ekran3: { title: string };
@@ -114,8 +116,9 @@ const App: React.FC = () => {
           <Stack.Screen name="Transaction" component={TransactionScreen} />
           <Stack.Screen name="Wallet" component={WalletScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
+          <Stack.Screen name="Car" component={CarScreen} />
           {/* Nowe ekrany testowe */}
-          <Stack.Screen name="Test" component={TestScreen} />
+          <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen
             name="Ekran1"
             component={ScreenTemplate}

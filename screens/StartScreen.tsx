@@ -54,7 +54,7 @@ const StartScreen: React.FC<StartScreenProps> = ({ navigation }) => {
         <View style={styles.centerButtonContainer}>
           <TouchableOpacity
             style={styles.testButton}
-            onPress={() => navigation.navigate("Test")}
+            onPress={() => navigation.navigate("Home")}
             activeOpacity={0.8}
           >
             <Text style={styles.testButtonText}>Test ekranów</Text>
