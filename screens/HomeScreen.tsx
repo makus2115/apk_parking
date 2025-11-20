@@ -28,6 +28,7 @@ const items: TestItem[] = [
   { key: "4", title: "Transaction", route: "Transaction" },
   { key: "5", title: "Wallet", route: "Wallet" },
   { key: "6", title: "Car", route: "Car" },
+  { key: "7", title: "Map", route: "Map" },
 ];
 
 type TestScreenProps = {
@@ -107,6 +108,7 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
     const isWallet = item.route === "Wallet";
     const isTransaction = item.route === "Transaction";
     const isCar = item.route === "Car";
+    const isMap = item.route === "Map";
 
     return (
       <TouchableOpacity
@@ -136,6 +138,13 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
             <Icon name="car-outline" size={46} color={GREEN} />
             <Text style={[styles.tileDesc, styles.StyleText]}>
               Dane pojazdów
+            </Text>
+          </>
+        ) : isMap ? (
+          <>
+            <Icon name="map-outline" size={46} color={GREEN} />
+            <Text style={[styles.tileDesc, styles.StyleText]}>
+              Lokalizacja
             </Text>
           </>
         ) : (

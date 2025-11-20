@@ -18,6 +18,7 @@ import TicketScreen from "./screens/TicketScreen";
 import TransactionScreen from "./screens/TransactionScreen";
 import WalletScreen from "./screens/WalletScreen";
 import CarScreen from "./screens/CarScreen";
+import MapScreen from "./screens/MapScreen";
 
 const GREEN = "#8BC34A";
 
@@ -32,6 +33,7 @@ export type RootStackParamList = {
   Settings: undefined;
   Home: undefined;
   Car: undefined;
+  Map: undefined;
   Ekran1: { title: string };
   Ekran2: { title: string };
   Ekran3: { title: string };
@@ -117,6 +119,7 @@ const App: React.FC = () => {
           <Stack.Screen name="Wallet" component={WalletScreen} />
           <Stack.Screen name="Settings" component={SettingsScreen} />
           <Stack.Screen name="Car" component={CarScreen} />
+          <Stack.Screen name="Map" component={MapScreen} />
           {/* Nowe ekrany testowe */}
           <Stack.Screen name="Home" component={HomeScreen} />
           <Stack.Screen
