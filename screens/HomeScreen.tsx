@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   FlatList,
@@ -13,35 +13,86 @@ import {
   Animated,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
+import AsyncStorage from "@react-native-async-storage/async-storage";
+import { useFocusEffect } from "@react-navigation/native";
 
 const GREEN = "#8BC34A";
 const DRAWER_WIDTH = 260;
 
-type TestItem = {
+const BALANCE_KEY = "@parking_balance" as const;
+const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
+
+const ZONES = {
+  A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
+  B: { name: "Strefa B", ratePerHour: 4.0 },
+  C: { name: "Strefa C", ratePerHour: 3.0 },
+} as const;
+
+type ZoneKey = keyof typeof ZONES;
+
+type ParkingTicket = {
+  id: string;
+  status: "ACTIVE" | "EXPIRED" | "CANCELLED";
+  createdAtISO: string;
+  plate: string;
+  zone: ZoneKey;
+  zoneName?: string;
+  startISO: string;
+  endISO: string;
+  durationMin: number;
+  amount: number;
+  notifyBeforeEnd: boolean;
+};
+
+type HomeItem = {
   key: string;
   title: string;
   route: string;
 };
 
-const items: TestItem[] = [
+const items: HomeItem[] = [
   { key: "3", title: "TicketScreen", route: "Ticket" },
   { key: "4", title: "Transaction", route: "Transaction" },
   { key: "5", title: "Wallet", route: "Wallet" },
   { key: "6", title: "Car", route: "Car" },
   { key: "7", title: "Map", route: "Map" },
+  { key: "8", title: "UserProfile", route: "UserProfile" },
 ];
 
-type TestScreenProps = {
+type HomeScreenProps = {
   navigation: any;
 };
 
-const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
+function addMinutes(date: Date, minutes: number): Date {
+  const d = new Date(date);
+  d.setMinutes(d.getMinutes() + minutes);
+  return d;
+}
+
+function ceilToQuarterMinutes(mins: number): number {
+  const block = 15;
+  return Math.ceil(mins / block) * block;
+}
+
+function computePricePLN(
+  durationMinutes: number,
+  ratePerHour: number
+): { billable: number; price: number } {
+  const billable = ceilToQuarterMinutes(Math.max(0, durationMinutes));
+  const price = (billable / 60) * ratePerHour;
+  return { billable, price: +price.toFixed(2) };
+}
+
+const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
-  const [ticketActive, setTicketActive] = useState<boolean>(true);
-  const [secondsLeft, setSecondsLeft] = useState<number>(3600); // 1h
+  const [ticketActive, setTicketActive] = useState<boolean>(false);
+  const [secondsLeft, setSecondsLeft] = useState<number>(0);
+  const [ticketLabel, setTicketLabel] = useState<string>("Brak");
 
-  // stan i animacja bocznej nawigacji
+  const [balance, setBalance] = useState<number>(0);
+  const [lastTicket, setLastTicket] = useState<ParkingTicket | null>(null);
+
   const [isDrawerOpen, setIsDrawerOpen] = useState(false);
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
 
@@ -74,21 +125,89 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
     }
   };
 
+  // wczytanie salda i ostatniego biletu przy wejściu na ekran
+  useFocusEffect(
+    useCallback(() => {
+      let isActive = true;
+
+      const loadData = async () => {
+        try {
+          const storedBalance = await AsyncStorage.getItem(BALANCE_KEY);
+          const storedTickets = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
+
+          if (!isActive) return;
+
+          if (storedBalance !== null) {
+            setBalance(parseFloat(storedBalance));
+          } else {
+            setBalance(0);
+          }
+
+          if (storedTickets) {
+            const parsed: ParkingTicket[] = JSON.parse(storedTickets);
+            if (parsed.length > 0) {
+              const sorted = parsed.sort(
+                (a, b) =>
+                  new Date(b.startISO).getTime() -
+                  new Date(a.startISO).getTime()
+              );
+              setLastTicket(sorted[0]);
+            } else {
+              setLastTicket(null);
+            }
+          } else {
+            setLastTicket(null);
+          }
+        } catch (e) {
+          console.warn("Błąd wczytywania salda/biletu startowego:", e);
+          setLastTicket(null);
+        }
+      };
+
+      void loadData();
+
+      return () => {
+        isActive = false;
+      };
+    }, [])
+  );
+
+  // odliczanie czasu i status biletu
   useEffect(() => {
-    if (!ticketActive) return;
-
-    const interval = setInterval(() => {
-      setSecondsLeft((prev) => (prev > 0 ? prev - 1 : 0));
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, [ticketActive]);
-
-  useEffect(() => {
-    if (secondsLeft === 0 && ticketActive) {
+    if (!lastTicket) {
       setTicketActive(false);
+      setTicketLabel("Brak");
+      setSecondsLeft(0);
+      return;
     }
-  }, [secondsLeft, ticketActive]);
+
+    const updateStateFromTicket = () => {
+      const now = new Date();
+      const start = new Date(lastTicket.startISO);
+      const end = new Date(lastTicket.endISO);
+
+      if (now < start) {
+        setTicketActive(false);
+        setTicketLabel("Zaplanowany");
+        setSecondsLeft(
+          Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000))
+        );
+      } else if (now >= start && now < end) {
+        setTicketActive(true);
+        setTicketLabel("Aktywny");
+        const diffMs = end.getTime() - now.getTime();
+        setSecondsLeft(Math.max(0, Math.floor(diffMs / 1000)));
+      } else {
+        setTicketActive(false);
+        setTicketLabel("Zakończony");
+        setSecondsLeft(0);
+      }
+    };
+
+    updateStateFromTicket();
+    const interval = setInterval(updateStateFromTicket, 1000);
+    return () => clearInterval(interval);
+  }, [lastTicket]);
 
   const formatTime = (totalSeconds: number) => {
     const h = Math.floor(totalSeconds / 3600);
@@ -98,17 +217,51 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
-  const handleExtend = () => {
-    setTicketActive(true);
-    setSecondsLeft(6);
+  // przedłużenie biletu o 15 minut
+  const handleExtend = async () => {
+    if (!lastTicket) return;
+
+    const EXTENSION_MINUTES = 15;
+
+    try {
+      const storedTickets = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
+      const parsed: ParkingTicket[] = storedTickets
+        ? JSON.parse(storedTickets)
+        : [];
+
+      const updated = parsed.map((t) => {
+        if (t.id !== lastTicket.id) return t;
+
+        const end = new Date(t.endISO);
+        const newEnd = addMinutes(end, EXTENSION_MINUTES);
+        const newDuration = (t.durationMin || 0) + EXTENSION_MINUTES;
+        const zoneCfg = ZONES[t.zone] || { ratePerHour: 0 };
+        const { price } = computePricePLN(newDuration, zoneCfg.ratePerHour);
+
+        return {
+          ...t,
+          endISO: newEnd.toISOString(),
+          durationMin: newDuration,
+          amount: price,
+        };
+      });
+
+      await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated));
+
+      const updatedTicket = updated.find((t) => t.id === lastTicket.id) || null;
+      setLastTicket(updatedTicket);
+    } catch (e) {
+      console.warn("Nie udało się przedłużyć biletu:", e);
+    }
   };
 
-  const renderItem: ListRenderItem<TestItem> = ({ item }) => {
+  const renderItem: ListRenderItem<HomeItem> = ({ item }) => {
     const isTicket = item.route === "Ticket";
     const isWallet = item.route === "Wallet";
     const isTransaction = item.route === "Transaction";
     const isCar = item.route === "Car";
     const isMap = item.route === "Map";
+    const isUserProfile = item.route === "UserProfile";
 
     return (
       <TouchableOpacity
@@ -143,9 +296,12 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
         ) : isMap ? (
           <>
             <Icon name="map-outline" size={46} color={GREEN} />
-            <Text style={[styles.tileDesc, styles.StyleText]}>
-              Lokalizacja
-            </Text>
+            <Text style={[styles.tileDesc, styles.StyleText]}>Lokalizacja</Text>
+          </>
+        ) : isUserProfile ? (
+          <>
+            <Icon name="person-circle-outline" size={46} color={GREEN} />
+            <Text style={[styles.tileDesc, styles.StyleText]}>Twój Profil</Text>
           </>
         ) : (
           <>
@@ -180,7 +336,7 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
 
             <View>
               <Text style={styles.bannerLabel}>Saldo</Text>
-              <Text style={styles.bannerValue}>20 zł</Text>
+              <Text style={styles.bannerValue}>{balance.toFixed(2)} zł</Text>
             </View>
           </View>
         </View>
@@ -190,11 +346,11 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
             <Text style={styles.bannerTicketStatus}>
               Bilet:{" "}
               <Text style={{ color: ticketActive ? GREEN : "#ff5252" }}>
-                {ticketActive ? "Aktywny" : "Brak"}
+                {ticketLabel}
               </Text>
             </Text>
 
-            {ticketActive && (
+            {ticketActive && secondsLeft > 0 && (
               <Text style={styles.bannerTime}>
                 Czas: {formatTime(secondsLeft)}
               </Text>
@@ -250,7 +406,6 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
       {/* BOCZNA NAWIGACJA ROZWIJANA */}
       {isDrawerOpen && (
         <View style={styles.drawerOverlay}>
-          {/* tło reagujące na kliknięcie poza panelem */}
           <TouchableOpacity
             style={StyleSheet.absoluteFill}
             activeOpacity={1}
@@ -269,8 +424,8 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
           >
             <Text style={styles.drawerTitle}>Informacje</Text>
             <Text style={styles.drawerText}>
-              Dodatkowe informacje o swoim koncie i 
-              aplikacji. Panel zamykasz klikając poza nim.
+              Dodatkowe informacje o swoim koncie i aplikacji. Panel zamykasz
+              klikając poza nim.
             </Text>
           </Animated.View>
         </View>
@@ -279,7 +434,7 @@ const TestScreen: React.FC<TestScreenProps> = ({ navigation }) => {
   );
 };
 
-export default TestScreen;
+export default HomeScreen;
 
 const styles = StyleSheet.create({
   root: {
@@ -423,7 +578,6 @@ const styles = StyleSheet.create({
     color: "#aaa",
   },
 
-  // BOCZNA NAWIGACJA
   drawerOverlay: {
     position: "absolute",
     top: 0,

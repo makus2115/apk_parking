@@ -1,7 +1,7 @@
 import {
-    DarkTheme,
-    DefaultTheme,
-    NavigationContainer,
+  DarkTheme,
+  DefaultTheme,
+  NavigationContainer,
 } from "@react-navigation/native";
 import { createNativeStackNavigator } from "@react-navigation/native-stack";
 import React, { useMemo, useState } from "react";
@@ -15,6 +15,7 @@ import SettingsScreen from "./screens/SettingsScreen";
 import StartScreen from "./screens/StartScreen";
 import HomeScreen from "./screens/HomeScreen";
 import TicketScreen from "./screens/TicketScreen";
+import UserProfileScreen from "./screens/UserProfileScreen";
 import TransactionScreen from "./screens/TransactionScreen";
 import WalletScreen from "./screens/WalletScreen";
 import CarScreen from "./screens/CarScreen";
@@ -34,6 +35,7 @@ export type RootStackParamList = {
   Home: undefined;
   Car: undefined;
   Map: undefined;
+  UserProfile: undefined;
   Ekran1: { title: string };
   Ekran2: { title: string };
   Ekran3: { title: string };
@@ -122,6 +124,7 @@ const App: React.FC = () => {
           <Stack.Screen name="Map" component={MapScreen} />
           {/* Nowe ekrany testowe */}
           <Stack.Screen name="Home" component={HomeScreen} />
+          <Stack.Screen name="UserProfile" component={UserProfileScreen} />
           <Stack.Screen
             name="Ekran1"
             component={ScreenTemplate}
