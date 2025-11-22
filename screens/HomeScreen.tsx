@@ -83,6 +83,50 @@ function computePricePLN(
   return { billable, price: +price.toFixed(2) };
 }
 
+function pickTicketToDisplay(tickets: ParkingTicket[]): ParkingTicket | null {
+  if (!tickets.length) return null;
+
+  const now = new Date();
+
+  // 1) wszystkie AKTYWNE (start <= now < end)
+  const activeTickets = tickets.filter((t) => {
+    const start = new Date(t.startISO);
+    const end = new Date(t.endISO);
+    return now >= start && now < end;
+  });
+
+  if (activeTickets.length > 0) {
+    // np. najpóźniej kończący się bilet
+    activeTickets.sort(
+      (a, b) =>
+        new Date(b.endISO).getTime() - new Date(a.endISO).getTime()
+    );
+    return activeTickets[0];
+  }
+
+  // 2) wszystkie ZAPLANOWANE (start > now)
+  const plannedTickets = tickets.filter((t) => {
+    const start = new Date(t.startISO);
+    return start > now;
+  });
+
+  if (plannedTickets.length > 0) {
+    // najbliższy w przyszłości
+    plannedTickets.sort(
+      (a, b) =>
+        new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
+    );
+    return plannedTickets[0];
+  }
+
+  // 3) brak aktywnych i zaplanowanych – weź „ostatni” (jak dotychczas)
+  const sortedByStartDesc = [...tickets].sort(
+    (a, b) =>
+      new Date(b.startISO).getTime() - new Date(a.startISO).getTime()
+  );
+  return sortedByStartDesc[0] ?? null;
+}
+
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
 
@@ -146,12 +190,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           if (storedTickets) {
             const parsed: ParkingTicket[] = JSON.parse(storedTickets);
             if (parsed.length > 0) {
-              const sorted = parsed.sort(
-                (a, b) =>
-                  new Date(b.startISO).getTime() -
-                  new Date(a.startISO).getTime()
-              );
-              setLastTicket(sorted[0]);
+              const ticketToShow = pickTicketToDisplay(parsed);
+              setLastTicket(ticketToShow);
             } else {
               setLastTicket(null);
             }
@@ -187,17 +227,19 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       const end = new Date(lastTicket.endISO);
 
       if (now < start) {
+        // ZAPLANOWANY – liczymy ile czasu zostało DO STARTU
         setTicketActive(false);
         setTicketLabel("Zaplanowany");
-        setSecondsLeft(
-          Math.max(0, Math.floor((end.getTime() - now.getTime()) / 1000))
-        );
+        const diffMs = start.getTime() - now.getTime();
+        setSecondsLeft(Math.max(0, Math.floor(diffMs / 1000)));
       } else if (now >= start && now < end) {
+        // AKTYWNY – jak wcześniej, czas do końca
         setTicketActive(true);
         setTicketLabel("Aktywny");
         const diffMs = end.getTime() - now.getTime();
         setSecondsLeft(Math.max(0, Math.floor(diffMs / 1000)));
       } else {
+        // ZAKOŃCZONY
         setTicketActive(false);
         setTicketLabel("Zakończony");
         setSecondsLeft(0);
@@ -323,25 +365,24 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
       {/* BANER NA GÓRZE */}
       <View style={styles.banner}>
-        <View style={styles.bannerLeft}>
-          <View style={styles.bannerLeftRow}>
-            {/* PRZYCISK OTWARCIA NAWIGACJI BOCZNEJ */}
-            <TouchableOpacity
-              style={styles.menuButton}
-              activeOpacity={0.8}
-              onPress={toggleDrawer}
-            >
-              <Icon name="information-circle-outline" size={22} color="#fff" />
-            </TouchableOpacity>
+        {/* GÓRNY RZĄD: przycisk + saldo */}
+        <View style={styles.bannerTopRow}>
+          <TouchableOpacity
+            style={styles.menuButton}
+            activeOpacity={0.8}
+            onPress={toggleDrawer}
+          >
+            <Icon name="information-circle-outline" size={22} color="#fff" />
+          </TouchableOpacity>
 
-            <View>
-              <Text style={styles.bannerLabel}>Saldo</Text>
-              <Text style={styles.bannerValue}>{balance.toFixed(2)} zł</Text>
-            </View>
+          <View>
+            <Text style={styles.bannerLabel}>Saldo</Text>
+            <Text style={styles.bannerValue}>{balance.toFixed(2)} zł</Text>
           </View>
         </View>
 
-        <View style={styles.bannerRight}>
+        {/* DOLNY RZĄD: status biletu + licznik + przycisk przedłużenia */}
+        <View style={styles.bannerBottomRow}>
           <View style={styles.bannerStatusRow}>
             <Text style={styles.bannerTicketStatus}>
               Bilet:{" "}
@@ -350,9 +391,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
               </Text>
             </Text>
 
-            {ticketActive && secondsLeft > 0 && (
+            {secondsLeft > 0 && (ticketActive || ticketLabel === "Zaplanowany") && (
               <Text style={styles.bannerTime}>
-                Czas: {formatTime(secondsLeft)}
+                {ticketLabel === "Zaplanowany" ? "Do startu: " : "Do końca: "}
+                {formatTime(secondsLeft)}
               </Text>
             )}
           </View>
@@ -368,6 +410,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           )}
         </View>
       </View>
+
 
       {/* LISTA KAFELKÓW */}
       <View style={styles.content}>
@@ -443,10 +486,8 @@ const styles = StyleSheet.create({
     paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
   },
   banner: {
-    flexDirection: "row",
-    alignItems: "center",
     paddingHorizontal: 26,
-    paddingVertical: 24,
+    paddingVertical: 20,
     backgroundColor: "#1b1b1b",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.08)",
@@ -471,8 +512,7 @@ const styles = StyleSheet.create({
     backgroundColor: "#242424",
   },
   bannerRight: {
-    flex: 2,
-    justifyContent: "center",
+    marginTop: 8,
     alignItems: "flex-end",
   },
   bannerLabel: {
@@ -499,7 +539,16 @@ const styles = StyleSheet.create({
     fontSize: 14,
     marginLeft: 12,
   },
+  bannerTopRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+  },
 
+  bannerBottomRow: {
+    marginTop: 10,
+    alignItems: "flex-end", // wyrównanie biletu do prawej
+  },
   extendButton: {
     marginTop: 6,
     paddingHorizontal: 12,
