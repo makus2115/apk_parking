@@ -1,18 +1,19 @@
-// screens/ParkingTransactionsScreen.tsx
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useEffect, useState } from "react";
 import {
-    ActivityIndicator,
-    FlatList,
-    ListRenderItem,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
+  Alert,
+  ActivityIndicator,
+  FlatList,
+  ListRenderItem,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { ScreenWrapper } from "../components";
 
 const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
+const BALANCE_KEY = "@parking_balance" as const;
 
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
@@ -149,30 +150,46 @@ const ParkingTransactionsScreen: React.FC = () => {
 
   async function handleExtend(id: string): Promise<void> {
     const EXTENSION_MINUTES = 15;
-    setTickets((prev) => {
-      const updated = prev.map((t) => {
-        if (t.id !== id) return t;
+    try {
+      const target = tickets.find((t) => t.id === id);
+      if (!target) return;
 
-        const end = new Date(t.endISO);
-        const newEnd = addMinutes(end, EXTENSION_MINUTES);
-        const newDuration = (t.durationMin || 0) + EXTENSION_MINUTES;
-        const zoneCfg = ZONES[t.zone] || { ratePerHour: 0 };
-        const { price } = computePricePLN(newDuration, zoneCfg.ratePerHour);
+      const storedBalance = await AsyncStorage.getItem(BALANCE_KEY);
+      const currentBalance = storedBalance ? parseFloat(storedBalance) : 0;
 
-        return {
-          ...t,
-          endISO: newEnd.toISOString(),
-          durationMin: newDuration,
-          amount: price,
-        };
-      });
+      const end = new Date(target.endISO);
+      const newEnd = addMinutes(end, EXTENSION_MINUTES);
+      const newDuration = (target.durationMin || 0) + EXTENSION_MINUTES;
+      const zoneCfg = ZONES[target.zone] || { ratePerHour: 0 };
+      const { price } = computePricePLN(newDuration, zoneCfg.ratePerHour);
+      const extraCost = Math.max(0, price - target.amount);
 
-      AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated)).catch(
-        (e) => console.warn("Nie udało się zaktualizować biletu", e)
+      if (extraCost > currentBalance) {
+        Alert.alert("Brak środków", "Doładuj saldo, aby przedłużyć bilet.");
+        return;
+      }
+
+      const updated = tickets.map((t) =>
+        t.id === id
+          ? {
+              ...t,
+              endISO: newEnd.toISOString(),
+              durationMin: newDuration,
+              amount: price,
+            }
+          : t
       );
 
-      return updated;
-    });
+      setTickets(updated);
+      await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated));
+
+      if (extraCost > 0) {
+        const newBalance = +(currentBalance - extraCost).toFixed(2);
+        await AsyncStorage.setItem(BALANCE_KEY, String(newBalance));
+      }
+    } catch (e) {
+      console.warn("Nie udało się przedłużyć biletu", e);
+    }
   }
 
   const renderItem: ListRenderItem<ParkingTicket> = ({ item }) => {
@@ -229,7 +246,7 @@ const ParkingTransactionsScreen: React.FC = () => {
             style={styles.button}
           >
             <Text style={styles.buttonText}>
-              {expanded ? "Mniej informacji" : "Więcej informacji"}
+              {expanded ? "Mniej informacji" : "Wiecej informacji"}
             </Text>
           </TouchableOpacity>
 
@@ -238,7 +255,7 @@ const ParkingTransactionsScreen: React.FC = () => {
               onPress={() => handleExtend(item.id)}
               style={[styles.button, styles.extendButton]}
             >
-              <Text style={styles.buttonText}>Przedłuż postój</Text>
+              <Text style={styles.buttonText}>Przedluz postoj</Text>
             </TouchableOpacity>
           )}
         </View>
@@ -247,14 +264,13 @@ const ParkingTransactionsScreen: React.FC = () => {
           <View style={styles.moreInfoContainer}>
             <Text style={styles.moreInfoText}>ID biletu: {item.id}</Text>
             <Text style={styles.moreInfoText}>
-              Okres: {formatDateTime(start)} – {formatDateTime(end)}
+              Okres: {formatDateTime(start)} - {formatDateTime(end)}
             </Text>
             <Text style={styles.moreInfoText}>
-              Łączny czas: {formatCzasPostoju(item.durationMin)}
+              Laczny czas: {formatCzasPostoju(item.durationMin)}
             </Text>
             <Text style={styles.moreInfoText}>
-              Powiadomienie przed końcem:{" "}
-              {item.notifyBeforeEnd ? "tak" : "nie"}
+              Powiadomienie przed końcem: {item.notifyBeforeEnd ? "tak" : "nie"}
             </Text>
           </View>
         )}
@@ -264,17 +280,20 @@ const ParkingTransactionsScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.container}>
+      <ScreenWrapper>
+        <View style={styles.container}>
         <Text style={styles.title}>Historia biletów</Text>
         <View style={styles.center}>
           <ActivityIndicator size="large" />
         </View>
-      </SafeAreaView>
+        </View>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.container}>
+    <ScreenWrapper>
+      <View style={styles.container}>
       <Text style={styles.title}>Historia biletów</Text>
 
       {tickets.length === 0 ? (
@@ -289,7 +308,8 @@ const ParkingTransactionsScreen: React.FC = () => {
           contentContainerStyle={styles.listContainer}
         />
       )}
-    </SafeAreaView>
+      </View>
+    </ScreenWrapper>
   );
 };
 
@@ -305,8 +325,8 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 24,
     fontWeight: "bold",
-    marginBottom: 20,
-    marginTop: 20,
+    marginBottom: 16,
+    marginTop: 16,
     textAlign: "center",
   },
   listContainer: {
@@ -314,14 +334,14 @@ const styles = StyleSheet.create({
   },
   transactionContainer: {
     backgroundColor: "#1e1e1e",
-    padding: 15,
+    padding: 14,
     borderRadius: 10,
     marginBottom: 10,
   },
   transactionText: {
     color: "#fff",
-    fontSize: 16,
-    marginBottom: 5,
+    fontSize: 15,
+    marginBottom: 4,
   },
   bold: {
     fontWeight: "700",

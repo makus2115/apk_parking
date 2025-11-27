@@ -1,13 +1,8 @@
 import React, { useEffect, useState } from "react";
-import {
-  ActivityIndicator,
-  SafeAreaView,
-  StyleSheet,
-  Text,
-  View,
-} from "react-native";
+import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
+import { ScreenWrapper } from "../components";
 
 const GREEN = "#8BC34A";
 
@@ -23,9 +18,7 @@ const MapScreen: React.FC<MapScreenProps> = () => {
   useEffect(() => {
     const initLocation = async () => {
       try {
-        // prosimy o uprawnienia
-        const { status } =
-          await Location.requestForegroundPermissionsAsync();
+        const { status } = await Location.requestForegroundPermissionsAsync();
 
         if (status !== "granted") {
           setErrorMsg("Brak zgody na dostęp do lokalizacji.");
@@ -33,7 +26,6 @@ const MapScreen: React.FC<MapScreenProps> = () => {
           return;
         }
 
-        // pobieramy aktualną pozycję
         const pos = await Location.getCurrentPositionAsync({
           accuracy: Location.Accuracy.High,
         });
@@ -56,36 +48,37 @@ const MapScreen: React.FC<MapScreenProps> = () => {
       }
     };
 
-    initLocation();
+    void initLocation();
   }, []);
 
   return (
-    <SafeAreaView style={styles.root}>
-      {loading && (
-        <View style={styles.centerOverlay}>
-          <ActivityIndicator size="large" color={GREEN} />
-          <Text style={styles.infoText}>Pobieranie lokalizacji…</Text>
-        </View>
-      )}
+    <ScreenWrapper>
+      <View style={styles.root}>
+        {loading && (
+          <View style={styles.centerOverlay}>
+            <ActivityIndicator size="large" color={GREEN} />
+            <Text style={styles.infoText}>Pobieranie lokalizacji...</Text>
+          </View>
+        )}
 
-      {!loading && errorMsg && (
-        <View style={styles.centerOverlay}>
-          <Text style={styles.errorText}>{errorMsg}</Text>
-        </View>
-      )}
+        {!loading && errorMsg && (
+          <View style={styles.centerOverlay}>
+            <Text style={styles.errorText}>{errorMsg}</Text>
+          </View>
+        )}
 
-      {!loading && !errorMsg && region && (
-        <MapView
-          style={StyleSheet.absoluteFill}
-          initialRegion={region}
-          showsUserLocation
-          showsMyLocationButton
-        >
-          {/* marker dokładnie w pozycji użytkownika */}
-          <Marker coordinate={region} title="Twoja pozycja" />
-        </MapView>
-      )}
-    </SafeAreaView>
+        {!loading && !errorMsg && region && (
+          <MapView
+            style={StyleSheet.absoluteFill}
+            initialRegion={region}
+            showsUserLocation
+            showsMyLocationButton
+          >
+            <Marker coordinate={region} title="Twoja pozycja" />
+          </MapView>
+        )}
+      </View>
+    </ScreenWrapper>
   );
 };
 

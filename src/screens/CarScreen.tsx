@@ -1,16 +1,15 @@
 import React, { useState } from "react";
 import {
-  SafeAreaView,
+  Animated,
+  Image,
+  ScrollView,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   View,
-  StatusBar,
-  Platform,
-  ScrollView,
-  Image,
-  TextInput,
 } from "react-native";
+import { ScreenWrapper } from "../components";
 
 const GREEN = "#8BC34A";
 
@@ -24,17 +23,17 @@ const initialCars: Car[] = [
   {
     id: "1",
     plate: "WX 12345",
-    image: require("../assets/cars/car1.png"),
+    image: require("../../assets/cars/car1.png"),
   },
   {
     id: "2",
     plate: "PO 9ABC1",
-    image: require("../assets/cars/car2.png"),
+    image: require("../../assets/cars/car2.png"),
   },
   {
     id: "3",
     plate: "KR 7J202",
-    image: require("../assets/cars/car3.png"),
+    image: require("../../assets/cars/car3.png"),
   },
 ];
 
@@ -57,7 +56,6 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
     const newCar: Car = {
       id: Date.now().toString(),
       plate,
-      // brak image -> pokaże się przycisk "Dodaj zdjęcie"
     };
 
     setCars((prev) => [...prev, newCar]);
@@ -66,127 +64,108 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
     setIsAdding(false);
   };
 
-  const handleEdit = () => {
-    // tutaj w przyszłości edycja numeru / zdjęcia
-  };
+  const handleEdit = () => {};
 
   return (
-    <SafeAreaView style={styles.root}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#101010"
-        translucent={false}
-      />
+    <ScreenWrapper>
+      <View style={styles.root}>
+        <View style={styles.banner}>
+          <Text style={styles.bannerTitle}>Twoje samochody</Text>
 
-      {/* BANER Z TABLICAMI */}
-      <View style={styles.banner}>
-        <Text style={styles.bannerTitle}>Twoje samochody</Text>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.platesScrollContent}
-        >
-          {cars.map((car) => {
-            const isActive = car.id === selectedId;
-            return (
-              <TouchableOpacity
-                key={car.id}
-                style={[
-                  styles.plateButton,
-                  isActive && styles.plateButtonActive,
-                ]}
-                onPress={() => setSelectedId(car.id)}
-                activeOpacity={0.8}
-              >
-                <Text
-                  style={[
-                    styles.plateText,
-                    isActive && styles.plateTextActive,
-                  ]}
-                >
-                  {car.plate}
-                </Text>
-              </TouchableOpacity>
-            );
-          })}
-
-          {/* OKRĄGŁY PRZYCISK DODANIA NOWEJ TABLICY */}
-          <TouchableOpacity
-            style={styles.addPlateButton}
-            activeOpacity={0.8}
-            onPress={() => setIsAdding((prev) => !prev)}
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            contentContainerStyle={styles.platesScrollContent}
           >
-            <Text style={styles.addPlateText}>+</Text>
-          </TouchableOpacity>
-        </ScrollView>
-
-        {/* FORMULARZ DODANIA NOWEJ TABLICY */}
-        {isAdding && (
-          <View style={styles.addPlateForm}>
-            <TextInput
-              style={styles.addPlateInput}
-              value={newPlate}
-              onChangeText={setNewPlate}
-              placeholder="Nowy numer rejestracyjny"
-              placeholderTextColor="#888"
-              autoCapitalize="characters"
-            />
-            <TouchableOpacity
-              style={styles.addPlateConfirm}
-              activeOpacity={0.85}
-              onPress={handleAddPlate}
-            >
-              <Text style={styles.addPlateConfirmText}>Dodaj</Text>
-            </TouchableOpacity>
-          </View>
-        )}
-      </View>
-
-      {/* ZDJĘCIE W RAMCE / PRZYCISK DODAJ ZDJĘCIE */}
-      <View style={styles.content}>
-        {selectedCar ? (
-          <>
-            <View style={styles.carImageWrapper}>
-              <View style={styles.carImageFrame}>
-                {selectedCar.image ? (
-                  <Image
-                    source={selectedCar.image}
-                    style={styles.carImage}
-                    resizeMode="cover"
-                  />
-                ) : (
-                  <TouchableOpacity
-                    style={styles.addPhotoButton}
-                    activeOpacity={0.85}
-                    onPress={() => {
-                      // tu w przyszłości logika wyboru zdjęcia
-                    }}
+            {cars.map((car) => {
+              const isActive = car.id === selectedId;
+              return (
+                <TouchableOpacity
+                  key={car.id}
+                  style={[styles.plateButton, isActive && styles.plateButtonActive]}
+                  onPress={() => setSelectedId(car.id)}
+                  activeOpacity={0.8}
+                >
+                  <Text
+                    style={[styles.plateText, isActive && styles.plateTextActive]}
                   >
-                    <Text style={styles.addPhotoText}>Dodaj zdjęcie</Text>
-                  </TouchableOpacity>
-                )}
-              </View>
-            </View>
+                    {car.plate}
+                  </Text>
+                </TouchableOpacity>
+              );
+            })}
 
-            {/* PRZYCISK EDYTUJ POD ZDJĘCIEM */}
-            <View style={styles.editWrapper}>
+            <TouchableOpacity
+              style={styles.addPlateButton}
+              activeOpacity={0.8}
+              onPress={() => setIsAdding((prev) => !prev)}
+            >
+              <Text style={styles.addPlateText}>+</Text>
+            </TouchableOpacity>
+          </ScrollView>
+
+          {isAdding && (
+            <View style={styles.addPlateForm}>
+              <TextInput
+                style={styles.addPlateInput}
+                value={newPlate}
+                onChangeText={setNewPlate}
+                placeholder="Nowy numer rejestracyjny"
+                placeholderTextColor="#888"
+                autoCapitalize="characters"
+              />
               <TouchableOpacity
-                style={styles.editButton}
+                style={styles.addPlateConfirm}
                 activeOpacity={0.85}
-                onPress={handleEdit}
+                onPress={handleAddPlate}
               >
-                <Text style={styles.editButtonText}>Edytuj</Text>
+                <Text style={styles.addPlateConfirmText}>Dodaj</Text>
               </TouchableOpacity>
             </View>
-          </>
-        ) : (
-          <Text style={styles.noCarText}>
-            Wybierz samochód z listy tablic rejestracyjnych powyżej.
-          </Text>
-        )}
+          )}
+        </View>
+
+        <View style={styles.content}>
+          {selectedCar ? (
+            <>
+              <View style={styles.carImageWrapper}>
+                <View style={styles.carImageFrame}>
+                  {selectedCar.image ? (
+                    <Image
+                      source={selectedCar.image}
+                      style={styles.carImage}
+                      resizeMode="cover"
+                    />
+                  ) : (
+                    <TouchableOpacity
+                      style={styles.addPhotoButton}
+                      activeOpacity={0.85}
+                      onPress={() => {}}
+                    >
+                      <Text style={styles.addPhotoText}>Dodaj zdjęcie</Text>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              </View>
+
+              <View style={styles.editWrapper}>
+                <TouchableOpacity
+                  style={styles.editButton}
+                  activeOpacity={0.85}
+                  onPress={handleEdit}
+                >
+                  <Text style={styles.editButtonText}>Edytuj</Text>
+                </TouchableOpacity>
+              </View>
+            </>
+          ) : (
+            <Text style={styles.noCarText}>
+              Wybierz samochód z listy tablic rejestracyjnych powyżej.
+            </Text>
+          )}
+        </View>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
@@ -196,10 +175,8 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#101010",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
   },
 
-  /* BANER */
   banner: {
     backgroundColor: "#1b1b1b",
     borderBottomWidth: 1,
@@ -242,7 +219,6 @@ const styles = StyleSheet.create({
     color: "#101010",
   },
 
-  // Okrągły przycisk z +
   addPlateButton: {
     width: 40,
     height: 40,
@@ -262,7 +238,6 @@ const styles = StyleSheet.create({
     lineHeight: 26,
   },
 
-  // Formularz dodawania nowej tablicy
   addPlateForm: {
     flexDirection: "row",
     alignItems: "center",
@@ -291,7 +266,6 @@ const styles = StyleSheet.create({
     fontSize: 14,
   },
 
-  /* TREŚĆ */
   content: {
     flex: 1,
     padding: 20,
@@ -301,7 +275,6 @@ const styles = StyleSheet.create({
     alignItems: "center",
   },
 
-  // KWADRATOWA RAMKA
   carImageFrame: {
     width: "100%",
     aspectRatio: 1,
@@ -318,7 +291,6 @@ const styles = StyleSheet.create({
     height: "100%",
   },
 
-  // przycisk "Dodaj zdjęcie" wewnątrz ramki
   addPhotoButton: {
     paddingHorizontal: 16,
     paddingVertical: 10,
@@ -332,7 +304,6 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
 
-  // wrapper i styl przycisku "Edytuj"
   editWrapper: {
     marginTop: 16,
     alignItems: "center",

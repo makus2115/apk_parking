@@ -1,26 +1,20 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { StackNavigationProp } from "@react-navigation/stack";
 import * as LocalAuthentication from "expo-local-authentication";
-import { StatusBar } from "expo-status-bar";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
-  SafeAreaView,
   StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
+import { ScreenWrapper } from "../components";
+import { RootStackParamList } from "../navigation/types";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
-
-type RootStackParamList = {
-  Start: undefined;
-  Register: undefined;
-  Login: undefined;
-};
 
 type LoginScreenNavigationProp = StackNavigationProp<
   RootStackParamList,
@@ -81,83 +75,82 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       Alert.alert("Błąd", "Proszę wprowadzić e-mail i hasło.");
       return;
     }
-    // TODO: API
     Alert.alert("Logowanie", `Zalogowano jako ${email}`);
   };
 
   const handleGoogleLogin = (): void => {
-    // TODO: API Google
     Alert.alert("Logowanie", "Zalogowano przez Google");
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <StatusBar style="light" />
-      <View style={styles.container}>
-        <Text style={styles.title}>Zaloguj się</Text>
+    <ScreenWrapper>
+      <View style={styles.root}>
+        <View style={styles.container}>
+          <Text style={styles.title}>Zaloguj się</Text>
 
-        <TextInput
-          style={styles.input}
-          placeholder="E-mail"
-          placeholderTextColor="#aaa"
-          keyboardType="email-address"
-          autoCapitalize="none"
-          value={email}
-          onChangeText={setEmail}
-        />
-
-        <TextInput
-          style={styles.input}
-          placeholder="Hasło"
-          placeholderTextColor="#aaa"
-          secureTextEntry
-          value={password}
-          onChangeText={setPassword}
-        />
-
-        <TouchableOpacity style={styles.button} onPress={handleLogin}>
-          <Text style={styles.buttonText}>Zaloguj</Text>
-        </TouchableOpacity>
-
-        <TouchableOpacity
-          style={[styles.button, styles.googleButton]}
-          onPress={handleGoogleLogin}
-        >
-          <MaterialCommunityIcons
-            name="google"
-            size={24}
-            color="white"
-            style={styles.googleIcon}
+          <TextInput
+            style={styles.input}
+            placeholder="E-mail"
+            placeholderTextColor="#aaa"
+            keyboardType="email-address"
+            autoCapitalize="none"
+            value={email}
+            onChangeText={setEmail}
           />
-          <Text style={styles.buttonText}>Zaloguj przez Google</Text>
-        </TouchableOpacity>
 
-        {canUseBiometrics && (
+          <TextInput
+            style={styles.input}
+            placeholder="Hasło"
+            placeholderTextColor="#aaa"
+            secureTextEntry
+            value={password}
+            onChangeText={setPassword}
+          />
+
+          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+            <Text style={styles.buttonText}>Zaloguj</Text>
+          </TouchableOpacity>
+
           <TouchableOpacity
-            style={styles.biometricButton}
-            onPress={handleBiometricLogin}
-            activeOpacity={0.85}
+            style={[styles.button, styles.googleButton]}
+            onPress={handleGoogleLogin}
           >
             <MaterialCommunityIcons
-              name="fingerprint"
+              name="google"
               size={24}
-              color={GREEN}
-              style={styles.biometricIcon}
+              color="white"
+              style={styles.googleIcon}
             />
-            <Text style={styles.biometricButtonText}>
-              Zaloguj odciskiem palca / Face ID
-            </Text>
+            <Text style={styles.buttonText}>Zaloguj przez Google</Text>
           </TouchableOpacity>
-        )}
 
-        <TouchableOpacity
-          onPress={() => navigation.navigate("Register")}
-          style={styles.linkBtn}
-        >
-          <Text style={styles.link}>Nie masz konta? Zarejestruj się</Text>
-        </TouchableOpacity>
+          {canUseBiometrics && (
+            <TouchableOpacity
+              style={styles.biometricButton}
+              onPress={handleBiometricLogin}
+              activeOpacity={0.85}
+            >
+              <MaterialCommunityIcons
+                name="fingerprint"
+                size={24}
+                color={GREEN}
+                style={styles.biometricIcon}
+              />
+              <Text style={styles.biometricButtonText}>
+                Zaloguj odciskiem palca / Face ID
+              </Text>
+            </TouchableOpacity>
+          )}
+
+          <TouchableOpacity
+            onPress={() => navigation.navigate("Register")}
+            style={styles.linkBtn}
+          >
+            <Text style={styles.link}>Nie masz konta? Zarejestruj się</Text>
+          </TouchableOpacity>
+        </View>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 

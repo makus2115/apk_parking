@@ -1,20 +1,19 @@
 import React, { useEffect, useRef, useState, useCallback } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
+  Animated,
+  Alert,
   FlatList,
   ListRenderItem,
-  SafeAreaView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  StatusBar,
-  Platform,
-  Animated,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
+import { ScreenWrapper } from "../components";
 
 const GREEN = "#8BC34A";
 const DRAWER_WIDTH = 260;
@@ -88,7 +87,6 @@ function pickTicketToDisplay(tickets: ParkingTicket[]): ParkingTicket | null {
 
   const now = new Date();
 
-  // 1) wszystkie AKTYWNE (start <= now < end)
   const activeTickets = tickets.filter((t) => {
     const start = new Date(t.startISO);
     const end = new Date(t.endISO);
@@ -96,33 +94,26 @@ function pickTicketToDisplay(tickets: ParkingTicket[]): ParkingTicket | null {
   });
 
   if (activeTickets.length > 0) {
-    // np. najpóźniej kończący się bilet
     activeTickets.sort(
-      (a, b) =>
-        new Date(b.endISO).getTime() - new Date(a.endISO).getTime()
+      (a, b) => new Date(b.endISO).getTime() - new Date(a.endISO).getTime()
     );
     return activeTickets[0];
   }
 
-  // 2) wszystkie ZAPLANOWANE (start > now)
   const plannedTickets = tickets.filter((t) => {
     const start = new Date(t.startISO);
     return start > now;
   });
 
   if (plannedTickets.length > 0) {
-    // najbliższy w przyszłości
     plannedTickets.sort(
-      (a, b) =>
-        new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
+      (a, b) => new Date(a.startISO).getTime() - new Date(b.startISO).getTime()
     );
     return plannedTickets[0];
   }
 
-  // 3) brak aktywnych i zaplanowanych – weź „ostatni” (jak dotychczas)
   const sortedByStartDesc = [...tickets].sort(
-    (a, b) =>
-      new Date(b.startISO).getTime() - new Date(a.startISO).getTime()
+    (a, b) => new Date(b.startISO).getTime() - new Date(a.startISO).getTime()
   );
   return sortedByStartDesc[0] ?? null;
 }
@@ -169,7 +160,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }
   };
 
-  // wczytanie salda i ostatniego biletu przy wejściu na ekran
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -212,7 +202,6 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     }, [])
   );
 
-  // odliczanie czasu i status biletu
   useEffect(() => {
     if (!lastTicket) {
       setTicketActive(false);
@@ -227,19 +216,16 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       const end = new Date(lastTicket.endISO);
 
       if (now < start) {
-        // ZAPLANOWANY – liczymy ile czasu zostało DO STARTU
         setTicketActive(false);
         setTicketLabel("Zaplanowany");
         const diffMs = start.getTime() - now.getTime();
         setSecondsLeft(Math.max(0, Math.floor(diffMs / 1000)));
       } else if (now >= start && now < end) {
-        // AKTYWNY – jak wcześniej, czas do końca
         setTicketActive(true);
         setTicketLabel("Aktywny");
         const diffMs = end.getTime() - now.getTime();
         setSecondsLeft(Math.max(0, Math.floor(diffMs / 1000)));
       } else {
-        // ZAKOŃCZONY
         setTicketActive(false);
         setTicketLabel("Zakończony");
         setSecondsLeft(0);
@@ -259,17 +245,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     return `${pad(h)}:${pad(m)}:${pad(s)}`;
   };
 
-  // przedłużenie biletu o 15 minut
   const handleExtend = async () => {
     if (!lastTicket) return;
 
     const EXTENSION_MINUTES = 15;
 
     try {
+      const storedBalance = await AsyncStorage.getItem(BALANCE_KEY);
+      const currentBalance = storedBalance ? parseFloat(storedBalance) : 0;
+
       const storedTickets = await AsyncStorage.getItem(TICKETS_STORAGE_KEY);
       const parsed: ParkingTicket[] = storedTickets
         ? JSON.parse(storedTickets)
         : [];
+
+      let extraCost = 0;
 
       const updated = parsed.map((t) => {
         if (t.id !== lastTicket.id) return t;
@@ -280,6 +270,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         const zoneCfg = ZONES[t.zone] || { ratePerHour: 0 };
         const { price } = computePricePLN(newDuration, zoneCfg.ratePerHour);
 
+        extraCost = Math.max(0, price - t.amount);
+
         return {
           ...t,
           endISO: newEnd.toISOString(),
@@ -288,10 +280,21 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         };
       });
 
+      if (extraCost > currentBalance) {
+        Alert.alert("Brak środków", "Doładuj saldo, aby przedłużyć bilet.");
+        return;
+      }
+
       await AsyncStorage.setItem(TICKETS_STORAGE_KEY, JSON.stringify(updated));
 
       const updatedTicket = updated.find((t) => t.id === lastTicket.id) || null;
       setLastTicket(updatedTicket);
+
+      if (extraCost > 0) {
+        const newBalance = +(currentBalance - extraCost).toFixed(2);
+        setBalance(newBalance);
+        await AsyncStorage.setItem(BALANCE_KEY, String(newBalance));
+      }
     } catch (e) {
       console.warn("Nie udało się przedłużyć biletu:", e);
     }
@@ -343,12 +346,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         ) : isUserProfile ? (
           <>
             <Icon name="person-circle-outline" size={46} color={GREEN} />
-            <Text style={[styles.tileDesc, styles.StyleText]}>Twój Profil</Text>
+            <Text style={[styles.tileDesc, styles.StyleText]}>Twój profil</Text>
           </>
         ) : (
           <>
             <Text style={styles.StyleTitle}>{item.title}</Text>
-            <Text style={styles.tileDesc}>Przejdź do {item.title}</Text>
+            <Text style={styles.tileDesc}>Przejdz do {item.title}</Text>
           </>
         )}
       </TouchableOpacity>
@@ -356,124 +359,115 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   };
 
   return (
-    <SafeAreaView style={styles.root}>
-      <StatusBar
-        barStyle="light-content"
-        backgroundColor="#101010"
-        translucent={false}
-      />
-
-      {/* BANER NA GÓRZE */}
-      <View style={styles.banner}>
-        {/* GÓRNY RZĄD: przycisk + saldo */}
-        <View style={styles.bannerTopRow}>
-          <TouchableOpacity
-            style={styles.menuButton}
-            activeOpacity={0.8}
-            onPress={toggleDrawer}
-          >
-            <Icon name="information-circle-outline" size={22} color="#fff" />
-          </TouchableOpacity>
-
-          <View>
-            <Text style={styles.bannerLabel}>Saldo</Text>
-            <Text style={styles.bannerValue}>{balance.toFixed(2)} zł</Text>
+    <ScreenWrapper
+      footer={
+        <View
+          style={[
+            styles.footer,
+            { paddingBottom: Math.max(8, insets.bottom), paddingTop: 8 },
+          ]}
+        >
+          <View style={styles.footerItem}>
+            <Icon name="home" size={26} color={GREEN} />
+            <Text style={[styles.footerLabel, { color: GREEN }]}>Home</Text>
           </View>
+
+          <TouchableOpacity
+            style={styles.footerItem}
+            activeOpacity={0.8}
+            onPress={() => navigation.navigate("Settings")}
+          >
+            <Icon name="settings-outline" size={24} color="#aaa" />
+            <Text style={styles.footerLabel}>Ustawienia</Text>
+          </TouchableOpacity>
         </View>
+      }
+    >
+      <View style={styles.root}>
+        <View style={styles.banner}>
+          <View style={styles.bannerTopRow}>
+            <TouchableOpacity
+              style={styles.menuButton}
+              activeOpacity={0.8}
+              onPress={toggleDrawer}
+            >
+              <Icon name="information-circle-outline" size={22} color="#fff" />
+            </TouchableOpacity>
 
-        {/* DOLNY RZĄD: status biletu + licznik + przycisk przedłużenia */}
-        <View style={styles.bannerBottomRow}>
-          <View style={styles.bannerStatusRow}>
-            <Text style={styles.bannerTicketStatus}>
-              Bilet:{" "}
-              <Text style={{ color: ticketActive ? GREEN : "#ff5252" }}>
-                {ticketLabel}
-              </Text>
-            </Text>
+            <View>
+              <Text style={styles.bannerLabel}>Saldo</Text>
+              <Text style={styles.bannerValue}>{balance.toFixed(2)} zł</Text>
+            </View>
+          </View>
 
-            {secondsLeft > 0 && (ticketActive || ticketLabel === "Zaplanowany") && (
-              <Text style={styles.bannerTime}>
-                {ticketLabel === "Zaplanowany" ? "Do startu: " : "Do końca: "}
-                {formatTime(secondsLeft)}
+          <View style={styles.bannerBottomRow}>
+            <View style={styles.bannerStatusRow}>
+              <Text style={styles.bannerTicketStatus}>
+                Bilet:{" "}
+                <Text style={{ color: ticketActive ? GREEN : "#ff5252" }}>
+                  {ticketLabel}
+                </Text>
               </Text>
+
+              {secondsLeft > 0 && (ticketActive || ticketLabel === "Zaplanowany") && (
+                <Text style={styles.bannerTime}>
+                  {ticketLabel === "Zaplanowany" ? "Do startu: " : "Do końca: "}
+                  {formatTime(secondsLeft)}
+                </Text>
+              )}
+            </View>
+
+            {ticketActive && (
+              <TouchableOpacity
+                style={styles.extendButton}
+                onPress={handleExtend}
+                activeOpacity={0.85}
+              >
+                <Text style={styles.extendButtonText}>Przedłuż</Text>
+              </TouchableOpacity>
             )}
           </View>
-
-          {ticketActive && (
-            <TouchableOpacity
-              style={styles.extendButton}
-              onPress={handleExtend}
-              activeOpacity={0.85}
-            >
-              <Text style={styles.extendButtonText}>Przedłuż</Text>
-            </TouchableOpacity>
-          )}
-        </View>
-      </View>
-
-
-      {/* LISTA KAFELKÓW */}
-      <View style={styles.content}>
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={(it) => it.key}
-          numColumns={2}
-          columnWrapperStyle={styles.row}
-          contentContainerStyle={styles.listContent}
-        />
-      </View>
-
-      {/* STOPKA NA DOLE */}
-      <View
-        style={[
-          styles.footer,
-          { paddingBottom: Math.max(12, insets.bottom), paddingTop: 10 },
-        ]}
-      >
-        <View style={styles.footerItem}>
-          <Icon name="home" size={26} color={GREEN} />
-          <Text style={[styles.footerLabel, { color: GREEN }]}>Home</Text>
         </View>
 
-        <TouchableOpacity
-          style={styles.footerItem}
-          activeOpacity={0.8}
-          onPress={() => navigation.navigate("Settings")}
-        >
-          <Icon name="settings-outline" size={24} color="#aaa" />
-          <Text style={styles.footerLabel}>Ustawienia</Text>
-        </TouchableOpacity>
-      </View>
-
-      {/* BOCZNA NAWIGACJA ROZWIJANA */}
-      {isDrawerOpen && (
-        <View style={styles.drawerOverlay}>
-          <TouchableOpacity
-            style={StyleSheet.absoluteFill}
-            activeOpacity={1}
-            onPress={closeDrawer}
+        <View style={styles.content}>
+          <FlatList
+            data={items}
+            renderItem={renderItem}
+            keyExtractor={(it) => it.key}
+            numColumns={2}
+            columnWrapperStyle={styles.row}
+            contentContainerStyle={styles.listContent}
           />
-
-          <Animated.View
-            style={[
-              styles.drawer,
-              {
-                transform: [{ translateX: slideAnim }],
-                paddingTop: insets.top + 16,
-                paddingBottom: Math.max(16, insets.bottom + 8),
-              },
-            ]}
-          >
-            <Text style={styles.drawerTitle}>Informacje</Text>
-            <Text style={styles.drawerText}>
-              Dodatkowe informacje o swoim koncie i aplikacji. Panel zamykasz
-              klikając poza nim.
-            </Text>
-          </Animated.View>
         </View>
-      )}
-    </SafeAreaView>
+
+        {isDrawerOpen && (
+          <View style={styles.drawerOverlay}>
+            <TouchableOpacity
+              style={StyleSheet.absoluteFill}
+              activeOpacity={1}
+              onPress={closeDrawer}
+            />
+
+            <Animated.View
+              style={[
+                styles.drawer,
+                {
+                  transform: [{ translateX: slideAnim }],
+                  paddingTop: insets.top + 16,
+                  paddingBottom: Math.max(16, insets.bottom + 8),
+                },
+              ]}
+            >
+              <Text style={styles.drawerTitle}>Informacje</Text>
+              <Text style={styles.drawerText}>
+                Dodatkowe informacje o koncie i aplikacji. Zamknij klikając
+                poza panelem.
+              </Text>
+            </Animated.View>
+          </View>
+        )}
+      </View>
+    </ScreenWrapper>
   );
 };
 
@@ -483,11 +477,10 @@ const styles = StyleSheet.create({
   root: {
     flex: 1,
     backgroundColor: "#101010",
-    paddingTop: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0,
   },
   banner: {
-    paddingHorizontal: 26,
-    paddingVertical: 20,
+    paddingHorizontal: 22,
+    paddingVertical: 12,
     backgroundColor: "#1b1b1b",
     borderBottomWidth: 1,
     borderBottomColor: "rgba(255,255,255,0.08)",
@@ -547,7 +540,7 @@ const styles = StyleSheet.create({
 
   bannerBottomRow: {
     marginTop: 10,
-    alignItems: "flex-end", // wyrównanie biletu do prawej
+    alignItems: "flex-end",
   },
   extendButton: {
     marginTop: 6,
@@ -611,8 +604,8 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-around",
-    paddingHorizontal: 32,
-    paddingVertical: 10,
+    paddingHorizontal: 24,
+    paddingVertical: 8,
     borderTopWidth: 1,
     borderTopColor: "rgba(255,255,255,0.12)",
     backgroundColor: "#161616",

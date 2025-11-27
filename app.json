@@ -20,7 +20,12 @@
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": false,
+      "navigationBar": {
+        "backgroundColor": "#ffffff",
+        "barStyle": "light-content"
+      },
+      "package": "com.anonymous.apk_parking"
     },
     "web": {
       "favicon": "./assets/favicon.png"

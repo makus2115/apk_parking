@@ -1,17 +1,19 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useMemo, useState } from "react";
 import {
-    Alert,
-    ScrollView,
-    StyleSheet,
-    Switch,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  Alert,
+  ScrollView,
+  StyleSheet,
+  Switch,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { ScreenWrapper } from "../components";
 
 const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
+const BALANCE_KEY = "@parking_balance" as const;
 
 const GREEN = "#8BC34A";
 
@@ -142,6 +144,15 @@ async function saveTicketGlobal(ticket: ParkingTicket): Promise<void> {
   }
 }
 
+async function readBalance(): Promise<number> {
+  try {
+    const raw = await AsyncStorage.getItem(BALANCE_KEY);
+    return raw ? parseFloat(raw) : 0;
+  } catch {
+    return 0;
+  }
+}
+
 const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   navigation,
 }) => {
@@ -152,17 +163,13 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
 
   const [zone, setZone] = useState<ZoneKey>("A");
   const [startNow, setStartNow] = useState<boolean>(true);
-  // trzymamy jako string, bo użytkownik wpisuje tekst
   const [startOffsetMin, setStartOffsetMin] = useState<string>("0");
   const [durationMin, setDurationMin] = useState<number>(60);
   const [notifyBeforeEnd, setNotifyBeforeEnd] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
 
   const now = new Date();
-  const startOffsetParsed = Number.parseInt(
-    startOffsetMin || "0",
-    10
-  );
+  const startOffsetParsed = Number.parseInt(startOffsetMin || "0", 10);
   const startTime = startNow
     ? now
     : addMinutes(now, Math.max(0, Math.min(720, startOffsetParsed)));
@@ -202,6 +209,13 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
     try {
       await new Promise((r) => setTimeout(r, 800));
 
+      const currentBalance = await readBalance();
+      if (price > currentBalance) {
+        Alert.alert("Brak środków", "Doładuj saldo, aby kupić bilet.");
+        setLoading(false);
+        return;
+      }
+
       const payload = {
         plate: selectedPlate,
         zone,
@@ -222,16 +236,15 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
 
       await saveTicketGlobal(ticket);
 
+      const newBalance = +(currentBalance - price).toFixed(2);
+      await AsyncStorage.setItem(BALANCE_KEY, String(newBalance));
+
       Alert.alert(
         "Bilet aktywny",
         `Pojazd: ${payload.plate}\n${payload.zoneName}\nOd: ${formatDateTime(
           startTime
         )}\nDo: ${formatDateTime(endTime)}\nKwota: ${formatPLN(price)}`
       );
-
-      // if (navigation?.navigate) {
-      //   navigation.navigate("ParkingTransactionsScreen");
-      // }
     } catch (e) {
       console.error(e);
       Alert.alert("Błąd", "Nie udało się kupić biletu. Spróbuj ponownie.");
@@ -241,183 +254,183 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   }
 
   return (
-    <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
-      <Text style={styles.heading}>Kup bilet parkingowy</Text>
+    <ScreenWrapper>
+      <ScrollView style={styles.screen} contentContainerStyle={styles.container}>
+        <Text style={styles.heading}>Kup bilet parkingowy</Text>
 
-      <Card>
-        <Text style={styles.label}>Pojazd</Text>
-        <View style={styles.rowWrap}>
-          {plates.map((p) => (
-            <Chip
-              key={p}
-              selected={p === selectedPlate}
-              onPress={() => setSelectedPlate(p)}
-            >
-              {p}
-            </Chip>
-          ))}
-          {!addingPlate ? (
+        <Card>
+          <Text style={styles.label}>Pojazd</Text>
+          <View style={styles.rowWrap}>
+            {plates.map((p) => (
+              <Chip
+                key={p}
+                selected={p === selectedPlate}
+                onPress={() => setSelectedPlate(p)}
+              >
+                {p}
+              </Chip>
+            ))}
+            {!addingPlate ? (
+              <TouchableOpacity
+                style={[styles.chip, styles.chipAdd]}
+                onPress={() => setAddingPlate(true)}
+              >
+                <Text style={[styles.chipText, { fontWeight: "700" }]}>
+                  + Dodaj
+                </Text>
+              </TouchableOpacity>
+            ) : null}
+          </View>
+
+          {addingPlate ? (
+            <View style={styles.addPlateRow}>
+              <TextInput
+                style={[styles.input, { flex: 1 }]}
+                placeholder="Np. WX 12345"
+                placeholderTextColor="#aaa"
+                autoCapitalize="characters"
+                value={newPlate}
+                onChangeText={setNewPlate}
+              />
+              <TouchableOpacity
+                style={styles.btnGhost}
+                onPress={() => setAddingPlate(false)}
+              >
+                <Text style={styles.btnGhostText}>Anuluj</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.btn} onPress={addPlate}>
+                <Text style={styles.btnText}>Dodaj</Text>
+              </TouchableOpacity>
+            </View>
+          ) : null}
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Strefa parkowania</Text>
+          <View style={styles.rowWrap}>
+            {Object.entries(ZONES).map(([k, v]) => (
+              <Chip
+                key={k}
+                selected={zone === (k as ZoneKey)}
+                onPress={() => setZone(k as ZoneKey)}
+              >
+                {k} • {v.name.replace(/^Strefa [A-Z] ?/, "")} •{" "}
+                {formatPLN(v.ratePerHour)}/h
+              </Chip>
+            ))}
+          </View>
+          <Text style={styles.hint}>
+            Rozliczenie co 15 minut. Maks. 8 godzin w jednej transakcji.
+          </Text>
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Rozpoczęcie</Text>
+          <View style={styles.toggleRow}>
             <TouchableOpacity
-              style={[styles.chip, styles.chipAdd]}
-              onPress={() => setAddingPlate(true)}
+              onPress={() => setStartNow(true)}
+              style={[styles.toggleBtn, startNow && styles.toggleSelected]}
             >
-              <Text style={[styles.chipText, { fontWeight: "700" }]}>
-                + Dodaj
+              <Text style={[styles.toggleText, startNow && styles.toggleTextSel]}>
+                Teraz
               </Text>
             </TouchableOpacity>
-          ) : null}
-        </View>
-
-        {addingPlate ? (
-          <View style={styles.addPlateRow}>
-            <TextInput
-              style={[styles.input, { flex: 1 }]}
-              placeholder="Np. WX 12345"
-              placeholderTextColor="#aaa"
-              autoCapitalize="characters"
-              value={newPlate}
-              onChangeText={setNewPlate}
-            />
             <TouchableOpacity
-              style={styles.btnGhost}
-              onPress={() => setAddingPlate(false)}
+              onPress={() => setStartNow(false)}
+              style={[styles.toggleBtn, !startNow && styles.toggleSelected]}
             >
-              <Text style={styles.btnGhostText}>Anuluj</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.btn} onPress={addPlate}>
-              <Text style={styles.btnText}>Dodaj</Text>
+              <Text style={[styles.toggleText, !startNow && styles.toggleTextSel]}>
+                Zaplanuj
+              </Text>
             </TouchableOpacity>
           </View>
-        ) : null}
-      </Card>
 
-      <Card>
-        <Text style={styles.label}>Strefa parkowania</Text>
-        <View style={styles.rowWrap}>
-          {Object.entries(ZONES).map(([k, v]) => (
-            <Chip
-              key={k}
-              selected={zone === (k as ZoneKey)}
-              onPress={() => setZone(k as ZoneKey)}
+          {!startNow ? (
+            <View style={styles.inlineRow}>
+              <Text style={styles.inlineLabel}>Start za</Text>
+              <TextInput
+                keyboardType="number-pad"
+                style={[styles.input, styles.inputSmall]}
+                placeholder="min"
+                placeholderTextColor="#aaa"
+                value={startOffsetMin}
+                onChangeText={(t) => setStartOffsetMin(t.replace(/[^\d]/g, ""))}
+              />
+              <Text style={styles.inlineSuffix}>min</Text>
+            </View>
+          ) : null}
+
+          <View style={styles.divider} />
+
+          <Text style={styles.label}>Czas trwania</Text>
+          <View style={styles.durationRow}>
+            <TouchableOpacity
+              onPress={() => setDurationMin((m) => Math.max(15, m - 15))}
+              style={[styles.qtyBtn, !canShorten && styles.btnDisabled]}
+              disabled={!canShorten}
             >
-              {k} • {v.name.replace(/^Strefa [A-Z] ?/, "")} •{" "}
-              {formatPLN(v.ratePerHour)}/h
-            </Chip>
-          ))}
-        </View>
-        <Text style={styles.hint}>
-          Rozliczenie co 15 minut. Maks. 8 godzin w jednej transakcji.
-        </Text>
-      </Card>
-
-      <Card>
-        <Text style={styles.label}>Rozpoczęcie</Text>
-        <View style={styles.toggleRow}>
-          <TouchableOpacity
-            onPress={() => setStartNow(true)}
-            style={[styles.toggleBtn, startNow && styles.toggleSelected]}
-          >
-            <Text style={[styles.toggleText, startNow && styles.toggleTextSel]}>
-              Teraz
+              <Text style={styles.qtyText}>-15</Text>
+            </TouchableOpacity>
+            <Text style={styles.durationText}>
+              {Math.floor(durationMin / 60)} h {durationMin % 60} min
             </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            onPress={() => setStartNow(false)}
-            style={[styles.toggleBtn, !startNow && styles.toggleSelected]}
-          >
-            <Text
-              style={[styles.toggleText, !startNow && styles.toggleTextSel]}
+            <TouchableOpacity
+              onPress={() => setDurationMin((m) => Math.min(8 * 60, m + 15))}
+              style={[styles.qtyBtn, !canExtend && styles.btnDisabled]}
+              disabled={!canExtend}
             >
-              Zaplanuj
-            </Text>
-          </TouchableOpacity>
-        </View>
-
-        {!startNow ? (
-          <View style={styles.inlineRow}>
-            <Text style={styles.inlineLabel}>Start za</Text>
-            <TextInput
-              keyboardType="number-pad"
-              style={[styles.input, styles.inputSmall]}
-              placeholder="min"
-              placeholderTextColor="#aaa"
-              value={startOffsetMin}
-              onChangeText={(t) => setStartOffsetMin(t.replace(/[^\d]/g, ""))}
-            />
-            <Text style={styles.inlineSuffix}>min</Text>
+              <Text style={styles.qtyText}>+15</Text>
+            </TouchableOpacity>
           </View>
-        ) : null}
 
-        <View style={styles.divider} />
-
-        <Text style={styles.label}>Czas trwania</Text>
-        <View style={styles.durationRow}>
-          <TouchableOpacity
-            onPress={() => setDurationMin((m) => Math.max(15, m - 15))}
-            style={[styles.qtyBtn, !canShorten && styles.btnDisabled]}
-            disabled={!canShorten}
-          >
-            <Text style={styles.qtyText}>−15</Text>
-          </TouchableOpacity>
-          <Text style={styles.durationText}>
-            {Math.floor(durationMin / 60)} h {durationMin % 60} min
+          <Text style={styles.hint}>
+            Start: {formatDateTime(startTime)}
+            {"\n"}
+            Koniec: {formatDateTime(endTime)}
           </Text>
-          <TouchableOpacity
-            onPress={() => setDurationMin((m) => Math.min(8 * 60, m + 15))}
-            style={[styles.qtyBtn, !canExtend && styles.btnDisabled]}
-            disabled={!canExtend}
-          >
-            <Text style={styles.qtyText}>+15</Text>
-          </TouchableOpacity>
-        </View>
+        </Card>
 
-        <Text style={styles.hint}>
-          Start: {formatDateTime(startTime)}
-          {"\n"}
-          Koniec: {formatDateTime(endTime)}
-        </Text>
-      </Card>
-
-      <Card>
-        <View style={styles.reminderRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.reminderTitle}>
-              Przypomnij 5 min przed końcem
-            </Text>
-            <Text style={styles.hint}>
-              Powiadomienie push/SMS (zależnie od ustawień)
-            </Text>
+        <Card>
+          <View style={styles.reminderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reminderTitle}>
+                Przypomnij 5 min przed końcem
+              </Text>
+              <Text style={styles.hint}>
+                Powiadomienie push/SMS (zależnie od ustawień)
+              </Text>
+            </View>
+            <Switch
+              value={notifyBeforeEnd}
+              onValueChange={setNotifyBeforeEnd}
+              thumbColor={notifyBeforeEnd ? "#e6f5ff" : "#777"}
+              trackColor={{ true: GREEN, false: "#333" }}
+            />
           </View>
-          <Switch
-            value={notifyBeforeEnd}
-            onValueChange={setNotifyBeforeEnd}
-            thumbColor={notifyBeforeEnd ? "#e6f5ff" : "#777"}
-            trackColor={{ true: GREEN, false: "#333" }}
-          />
-        </View>
-      </Card>
+        </Card>
 
-      <Card>
-        <Text style={styles.label}>Podsumowanie</Text>
-        <Row label="Tablice" value={selectedPlate} />
-        <Row label="Strefa" value={`${zone} • ${ZONES[zone].name}`} />
-        <Row label="Stawka" value={`${formatPLN(rate)}/h`} />
-        <Row label="Czas rozliczeniowy" value={`${billable} min`} />
-        <Row label="Kwota do zapłaty" value={formatPLN(price)} big />
-      </Card>
+        <Card>
+          <Text style={styles.label}>Podsumowanie</Text>
+          <Row label="Tablice" value={selectedPlate} />
+          <Row label="Strefa" value={`${zone} • ${ZONES[zone].name}`} />
+          <Row label="Stawka" value={`${formatPLN(rate)}/h`} />
+          <Row label="Czas rozliczeniowy" value={`${billable} min`} />
+          <Row label="Kwota do zapłaty" value={formatPLN(price)} big />
+        </Card>
 
-      <TouchableOpacity
-        style={[styles.payBtn, loading && { opacity: 0.7 }]}
-        onPress={handleBuy}
-        disabled={loading}
-      >
-        <Text style={styles.payText}>
-          {loading ? "Przetwarzanie..." : `Kup bilet – ${formatPLN(price)}`}
-        </Text>
-      </TouchableOpacity>
+        <TouchableOpacity
+          style={[styles.payBtn, loading && { opacity: 0.7 }]}
+          onPress={handleBuy}
+          disabled={loading}
+        >
+          <Text style={styles.payText}>
+            {loading ? "Przetwarzanie..." : `Kup bilet - ${formatPLN(price)}`}
+          </Text>
+        </TouchableOpacity>
 
-      <View style={{ height: 28 }} />
-    </ScrollView>
+        <View style={{ height: 28 }} />
+      </ScrollView>
+    </ScreenWrapper>
   );
 };
 

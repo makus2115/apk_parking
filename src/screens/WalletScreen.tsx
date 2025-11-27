@@ -1,20 +1,19 @@
 import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
-import { StatusBar } from "expo-status-bar";
 import React, { useCallback, useState } from "react";
 import {
-    ActivityIndicator,
-    Alert,
-    FlatList,
-    ListRenderItem,
-    SafeAreaView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  ActivityIndicator,
+  Alert,
+  FlatList,
+  ListRenderItem,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
+import { ScreenWrapper } from "../components";
 
 const BALANCE_KEY = "@parking_balance" as const;
 const HISTORY_KEY = "@parking_topup_history" as const;
@@ -28,11 +27,10 @@ type TopUpEntry = {
 
 const WalletScreen: React.FC = () => {
   const [balance, setBalance] = useState<number>(0);
-  const [amount, setAmount] = useState<string>("10"); // bazowo 10 zł
+  const [amount, setAmount] = useState<string>("10");
   const [history, setHistory] = useState<TopUpEntry[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
 
-  // wczytywanie danych przy każdym wejściu na ekran
   useFocusEffect(
     useCallback(() => {
       let isActive = true;
@@ -124,79 +122,76 @@ const WalletScreen: React.FC = () => {
 
   if (loading) {
     return (
-      <SafeAreaView style={styles.root}>
-        <StatusBar style="light" />
-        <View
-          style={[
-            styles.container,
-            { justifyContent: "center", alignItems: "center" },
-          ]}
-        >
-          <ActivityIndicator size="large" color={GREEN} />
-          <Text style={{ color: "#fff", marginTop: 10 }}>
-            Wczytywanie danych...
-          </Text>
+      <ScreenWrapper>
+        <View style={styles.root}>
+          <View
+            style={[styles.container, { justifyContent: "center", alignItems: "center" }]}
+          >
+            <ActivityIndicator size="large" color={GREEN} />
+            <Text style={{ color: "#fff", marginTop: 10 }}>
+              Wczytywanie danych...
+            </Text>
+          </View>
         </View>
-      </SafeAreaView>
+      </ScreenWrapper>
     );
   }
 
   return (
-    <SafeAreaView style={styles.root}>
-      <View style={styles.container}>
-        {/* SALDO */}
-        <View style={styles.balanceContainer}>
-          <View style={styles.balanceRow}>
-            <MaterialCommunityIcons
-              name="wallet"
-              size={28}
-              color={GREEN}
-              style={{ marginRight: 10 }}
-            />
-            <Text style={styles.balanceLabel}>Dostępne saldo</Text>
-          </View>
-          <Text style={styles.balanceValue}>{balance.toFixed(2)} zł</Text>
-        </View>
-
-        {/* DOŁADOWANIE */}
-        <View style={styles.topUpContainer}>
-          <Text style={styles.sectionTitle}>Doładuj konto</Text>
-
-          <View style={styles.amountRow}>
-            <TextInput
-              style={styles.amountInput}
-              keyboardType="numeric"
-              placeholder="Kwota"
-              placeholderTextColor="#777"
-              value={amount}
-              onChangeText={setAmount}
-            />
-            <Text style={styles.amountCurrency}>zł</Text>
+    <ScreenWrapper>
+      <View style={styles.root}>
+        <View style={styles.container}>
+          <View style={styles.balanceContainer}>
+            <View style={styles.balanceRow}>
+              <MaterialCommunityIcons
+                name="wallet"
+                size={28}
+                color={GREEN}
+                style={{ marginRight: 10 }}
+              />
+              <Text style={styles.balanceLabel}>Dostępne saldo</Text>
+            </View>
+            <Text style={styles.balanceValue}>{balance.toFixed(2)} zł</Text>
           </View>
 
-          <TouchableOpacity style={styles.topUpButton} onPress={handleTopUp}>
+          <View style={styles.topUpContainer}>
+            <Text style={styles.sectionTitle}>Doładuj konto</Text>
+
+            <View style={styles.amountRow}>
+              <TextInput
+                style={styles.amountInput}
+                keyboardType="numeric"
+                placeholder="Kwota"
+                placeholderTextColor="#777"
+                value={amount}
+                onChangeText={setAmount}
+              />
+              <Text style={styles.amountCurrency}>zł</Text>
+            </View>
+
+            <TouchableOpacity style={styles.topUpButton} onPress={handleTopUp}>
             <Text style={styles.topUpButtonText}>Doładuj</Text>
-          </TouchableOpacity>
-        </View>
+            </TouchableOpacity>
+          </View>
 
-        {/* HISTORIA DOŁADOWAŃ */}
-        <View style={styles.historyContainer}>
-          <Text style={styles.sectionTitle}>Historia doładowań</Text>
+          <View style={styles.historyContainer}>
+            <Text style={styles.sectionTitle}>Historia doładowań</Text>
 
-          <FlatList
-            data={history}
-            keyExtractor={(item) => item.id}
-            renderItem={renderItem}
-            contentContainerStyle={{ paddingBottom: 20 }}
-            ListEmptyComponent={
-              <Text style={styles.emptyHistory}>
-                Brak zarejestrowanych doładowań.
-              </Text>
-            }
-          />
+            <FlatList
+              data={history}
+              keyExtractor={(item) => item.id}
+              renderItem={renderItem}
+              contentContainerStyle={{ paddingBottom: 20 }}
+              ListEmptyComponent={
+                <Text style={styles.emptyHistory}>
+                  Brak zarejestrowanych doładowań.
+                </Text>
+              }
+            />
+          </View>
         </View>
       </View>
-    </SafeAreaView>
+    </ScreenWrapper>
   );
 };
 
