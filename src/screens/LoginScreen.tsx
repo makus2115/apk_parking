@@ -4,10 +4,10 @@ import * as LocalAuthentication from "expo-local-authentication";
 import React, { useContext, useEffect, useState } from "react";
 import {
   Alert,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -107,12 +107,22 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             onChangeText={setPassword}
           />
 
-          <TouchableOpacity style={styles.button} onPress={handleLogin}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              pressed && styles.pressed,
+            ]}
+            onPress={handleLogin}
+          >
             <Text style={styles.buttonText}>Zaloguj</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[styles.button, styles.googleButton]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              styles.googleButton,
+              pressed && styles.pressed,
+            ]}
             onPress={handleGoogleLogin}
           >
             <MaterialCommunityIcons
@@ -122,13 +132,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               style={styles.googleIcon}
             />
             <Text style={styles.buttonText}>Zaloguj przez Google</Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {canUseBiometrics && (
-            <TouchableOpacity
-              style={styles.biometricButton}
+            <Pressable
+              style={({ pressed }) => [
+                styles.biometricButton,
+                pressed && styles.pressed,
+              ]}
               onPress={handleBiometricLogin}
-              activeOpacity={0.85}
             >
               <MaterialCommunityIcons
                 name="fingerprint"
@@ -139,15 +151,15 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
               <Text style={styles.biometricButtonText}>
                 Zaloguj odciskiem palca / Face ID
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation.navigate("Register")}
-            style={styles.linkBtn}
+            style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
           >
             <Text style={styles.link}>Nie masz konta? Zarejestruj się</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </ScreenWrapper>
@@ -228,5 +240,8 @@ const styles = StyleSheet.create({
     color: GREEN,
     fontSize: 16,
     fontWeight: "600",
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

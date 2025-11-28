@@ -2,12 +2,12 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import React, { useMemo, useState } from "react";
 import {
   Alert,
+  Pressable,
   ScrollView,
   StyleSheet,
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -102,14 +102,18 @@ type ChipProps = {
 };
 
 const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
-  <TouchableOpacity
+  <Pressable
     onPress={onPress}
-    style={[styles.chip, selected && styles.chipSelected]}
+    style={({ pressed }) => [
+      styles.chip,
+      selected && styles.chipSelected,
+      pressed && styles.pressed,
+    ]}
   >
     <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
       {children}
     </Text>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 type CardProps = {
@@ -271,14 +275,18 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
               </Chip>
             ))}
             {!addingPlate ? (
-              <TouchableOpacity
-                style={[styles.chip, styles.chipAdd]}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.chip,
+                  styles.chipAdd,
+                  pressed && styles.pressed,
+                ]}
                 onPress={() => setAddingPlate(true)}
               >
                 <Text style={[styles.chipText, { fontWeight: "700" }]}>
                   + Dodaj
                 </Text>
-              </TouchableOpacity>
+              </Pressable>
             ) : null}
           </View>
 
@@ -292,15 +300,24 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
                 value={newPlate}
                 onChangeText={setNewPlate}
               />
-              <TouchableOpacity
-                style={styles.btnGhost}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btnGhost,
+                  pressed && styles.pressed,
+                ]}
                 onPress={() => setAddingPlate(false)}
               >
                 <Text style={styles.btnGhostText}>Anuluj</Text>
-              </TouchableOpacity>
-              <TouchableOpacity style={styles.btn} onPress={addPlate}>
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.btn,
+                  pressed && styles.pressed,
+                ]}
+                onPress={addPlate}
+              >
                 <Text style={styles.btnText}>Dodaj</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           ) : null}
         </Card>
@@ -327,22 +344,30 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
         <Card>
           <Text style={styles.label}>Rozpoczęcie</Text>
           <View style={styles.toggleRow}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setStartNow(true)}
-              style={[styles.toggleBtn, startNow && styles.toggleSelected]}
+              style={({ pressed }) => [
+                styles.toggleBtn,
+                startNow && styles.toggleSelected,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={[styles.toggleText, startNow && styles.toggleTextSel]}>
                 Teraz
               </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
+            </Pressable>
+            <Pressable
               onPress={() => setStartNow(false)}
-              style={[styles.toggleBtn, !startNow && styles.toggleSelected]}
+              style={({ pressed }) => [
+                styles.toggleBtn,
+                !startNow && styles.toggleSelected,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={[styles.toggleText, !startNow && styles.toggleTextSel]}>
                 Zaplanuj
               </Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           {!startNow ? (
@@ -364,23 +389,31 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
 
           <Text style={styles.label}>Czas trwania</Text>
           <View style={styles.durationRow}>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setDurationMin((m) => Math.max(15, m - 15))}
-              style={[styles.qtyBtn, !canShorten && styles.btnDisabled]}
+              style={({ pressed }) => [
+                styles.qtyBtn,
+                !canShorten && styles.btnDisabled,
+                pressed && styles.pressed,
+              ]}
               disabled={!canShorten}
             >
               <Text style={styles.qtyText}>-15</Text>
-            </TouchableOpacity>
+            </Pressable>
             <Text style={styles.durationText}>
               {Math.floor(durationMin / 60)} h {durationMin % 60} min
             </Text>
-            <TouchableOpacity
+            <Pressable
               onPress={() => setDurationMin((m) => Math.min(8 * 60, m + 15))}
-              style={[styles.qtyBtn, !canExtend && styles.btnDisabled]}
+              style={({ pressed }) => [
+                styles.qtyBtn,
+                !canExtend && styles.btnDisabled,
+                pressed && styles.pressed,
+              ]}
               disabled={!canExtend}
             >
               <Text style={styles.qtyText}>+15</Text>
-            </TouchableOpacity>
+            </Pressable>
           </View>
 
           <Text style={styles.hint}>
@@ -418,15 +451,19 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
           <Row label="Kwota do zapłaty" value={formatPLN(price)} big />
         </Card>
 
-        <TouchableOpacity
-          style={[styles.payBtn, loading && { opacity: 0.7 }]}
+        <Pressable
+          style={({ pressed }) => [
+            styles.payBtn,
+            loading && { opacity: 0.7 },
+            pressed && styles.pressed,
+          ]}
           onPress={handleBuy}
           disabled={loading}
         >
           <Text style={styles.payText}>
             {loading ? "Przetwarzanie..." : `Kup bilet - ${formatPLN(price)}`}
           </Text>
-        </TouchableOpacity>
+        </Pressable>
 
         <View style={{ height: 28 }} />
       </ScrollView>
@@ -609,4 +646,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   payText: { color: "#071b0a", fontSize: 18, fontWeight: "800" },
+  pressed: {
+    opacity: 0.85,
+  },
 });

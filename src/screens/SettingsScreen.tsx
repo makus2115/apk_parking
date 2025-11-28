@@ -4,7 +4,7 @@ import {
   StyleSheet,
   Switch,
   Text,
-  TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -35,21 +35,23 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     <ScreenWrapper
       footer={
         <View style={styles.footer}>
-          <TouchableOpacity
-            style={[styles.btn, styles.btnOutline]}
-            activeOpacity={0.85}
+          <Pressable
+            style={({ pressed }) => [
+              styles.btn,
+              styles.btnOutline,
+              pressed && styles.pressed,
+            ]}
             onPress={() => navigation.goBack()}
           >
             <Text style={[styles.btnText, styles.btnTextOutline]}>Anuluj</Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={styles.btn}
-            activeOpacity={0.85}
+          <Pressable
+            style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
             onPress={() => navigation.navigate("Start")}
           >
             <Text style={styles.btnText}>Zapisz i wróć</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       }
     >
@@ -194,5 +196,8 @@ const createStyles = (colors: ThemeColors) =>
     },
     btnTextOutline: {
       color: GREEN,
+    },
+    pressed: {
+      opacity: 0.85,
     },
   });

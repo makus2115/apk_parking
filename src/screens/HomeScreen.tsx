@@ -1,13 +1,13 @@
-import React, { useEffect, useRef, useState, useCallback } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Animated,
   Alert,
   FlatList,
   ListRenderItem,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import Icon from "react-native-vector-icons/Ionicons";
@@ -171,20 +171,13 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
           if (!isActive) return;
 
-          if (storedBalance !== null) {
-            setBalance(parseFloat(storedBalance));
-          } else {
-            setBalance(0);
-          }
+          setBalance(storedBalance !== null ? parseFloat(storedBalance) : 0);
 
           if (storedTickets) {
             const parsed: ParkingTicket[] = JSON.parse(storedTickets);
-            if (parsed.length > 0) {
-              const ticketToShow = pickTicketToDisplay(parsed);
-              setLastTicket(ticketToShow);
-            } else {
-              setLastTicket(null);
-            }
+            const ticketToShow =
+              parsed.length > 0 ? pickTicketToDisplay(parsed) : null;
+            setLastTicket(ticketToShow);
           } else {
             setLastTicket(null);
           }
@@ -309,9 +302,12 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
     const isUserProfile = item.route === "UserProfile";
 
     return (
-      <TouchableOpacity
-        style={[styles.tile, styles.StyleTile]}
-        activeOpacity={0.85}
+      <Pressable
+        style={({ pressed }) => [
+          styles.tile,
+          styles.StyleTile,
+          pressed && styles.pressed,
+        ]}
         onPress={() => navigation.navigate(item.route)}
       >
         {isTicket ? (
@@ -351,10 +347,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
         ) : (
           <>
             <Text style={styles.StyleTitle}>{item.title}</Text>
-            <Text style={styles.tileDesc}>Przejdz do {item.title}</Text>
+            <Text style={styles.tileDesc}>Przejdź do {item.title}</Text>
           </>
         )}
-      </TouchableOpacity>
+      </Pressable>
     );
   };
 
@@ -372,27 +368,31 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <Text style={[styles.footerLabel, { color: GREEN }]}>Home</Text>
           </View>
 
-          <TouchableOpacity
-            style={styles.footerItem}
-            activeOpacity={0.8}
+          <Pressable
+            style={({ pressed }) => [
+              styles.footerItem,
+              pressed && styles.pressed,
+            ]}
             onPress={() => navigation.navigate("Settings")}
           >
             <Icon name="settings-outline" size={24} color="#aaa" />
             <Text style={styles.footerLabel}>Ustawienia</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       }
     >
       <View style={styles.root}>
         <View style={styles.banner}>
           <View style={styles.bannerTopRow}>
-            <TouchableOpacity
-              style={styles.menuButton}
-              activeOpacity={0.8}
+            <Pressable
+              style={({ pressed }) => [
+                styles.menuButton,
+                pressed && styles.pressed,
+              ]}
               onPress={toggleDrawer}
             >
               <Icon name="information-circle-outline" size={22} color="#fff" />
-            </TouchableOpacity>
+            </Pressable>
 
             <View>
               <Text style={styles.bannerLabel}>Saldo</Text>
@@ -418,13 +418,15 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             </View>
 
             {ticketActive && (
-              <TouchableOpacity
-                style={styles.extendButton}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.extendButton,
+                  pressed && styles.pressed,
+                ]}
                 onPress={handleExtend}
-                activeOpacity={0.85}
               >
                 <Text style={styles.extendButtonText}>Przedłuż</Text>
-              </TouchableOpacity>
+              </Pressable>
             )}
           </View>
         </View>
@@ -442,9 +444,8 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
         {isDrawerOpen && (
           <View style={styles.drawerOverlay}>
-            <TouchableOpacity
+            <Pressable
               style={StyleSheet.absoluteFill}
-              activeOpacity={1}
               onPress={closeDrawer}
             />
 
@@ -649,5 +650,8 @@ const styles = StyleSheet.create({
     color: "#ddd",
     fontSize: 14,
     lineHeight: 20,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

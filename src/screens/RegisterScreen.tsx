@@ -1,10 +1,10 @@
 import React, { useMemo, useState } from "react";
 import {
   Alert,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -112,13 +112,13 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
               value={password}
               onChangeText={setPassword}
             />
-            <TouchableOpacity
-              onPress={() => setShowPass((s) => !s)}
-              style={styles.eyeBtn}
-              accessibilityLabel={showPass ? "Ukryj hasło" : "Pokaż hasło"}
-            >
-              <Text style={styles.eyeText}>{showPass ? "Ukryj" : "Pokaż"}</Text>
-            </TouchableOpacity>
+          <Pressable
+            onPress={() => setShowPass((s) => !s)}
+            style={({ pressed }) => [styles.eyeBtn, pressed && styles.pressed]}
+            accessibilityLabel={showPass ? "Ukryj hasło" : "Pokaż hasło"}
+          >
+            <Text style={styles.eyeText}>{showPass ? "Ukryj" : "Pokaż"}</Text>
+          </Pressable>
           </View>
 
           <TextInput
@@ -144,9 +144,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             </Text>
           </View>
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => setAccepted((v) => !v)}
-            style={styles.checkboxRow}
+            style={({ pressed }) => [styles.checkboxRow, pressed && styles.pressed]}
           >
             <View style={[styles.checkbox, accepted && styles.checkboxChecked]}>
               {accepted ? <Text style={styles.checkboxMark}>✓</Text> : null}
@@ -154,24 +154,28 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
             <Text style={styles.checkboxLabel}>
               Akceptuję regulamin i politykę prywatności
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
-            style={[styles.button, loading && styles.buttonDisabled]}
+          <Pressable
+            style={({ pressed }) => [
+              styles.button,
+              loading && styles.buttonDisabled,
+              pressed && styles.pressed,
+            ]}
             onPress={handleRegister}
             disabled={loading}
           >
             <Text style={styles.buttonText}>
               {loading ? "Tworzenie konta..." : "Zarejestruj się"}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
-          <TouchableOpacity
+          <Pressable
             onPress={() => navigation?.navigate?.("Login")}
-            style={styles.linkBtn}
+            style={({ pressed }) => [styles.linkBtn, pressed && styles.pressed]}
           >
             <Text style={styles.link}>Masz już konto? Zaloguj się</Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
       </View>
     </ScreenWrapper>
@@ -297,5 +301,8 @@ const styles = StyleSheet.create({
   link: {
     color: "#aaa",
     fontSize: 14,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

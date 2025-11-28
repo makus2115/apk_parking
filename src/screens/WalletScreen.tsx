@@ -7,10 +7,10 @@ import {
   Alert,
   FlatList,
   ListRenderItem,
+  Pressable,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -169,9 +169,15 @@ const WalletScreen: React.FC = () => {
               <Text style={styles.amountCurrency}>zł</Text>
             </View>
 
-            <TouchableOpacity style={styles.topUpButton} onPress={handleTopUp}>
-            <Text style={styles.topUpButtonText}>Doładuj</Text>
-            </TouchableOpacity>
+            <Pressable
+              style={({ pressed }) => [
+                styles.topUpButton,
+                pressed && styles.pressed,
+              ]}
+              onPress={handleTopUp}
+            >
+              <Text style={styles.topUpButtonText}>Doładuj</Text>
+            </Pressable>
           </View>
 
           <View style={styles.historyContainer}>
@@ -292,5 +298,8 @@ const styles = StyleSheet.create({
     color: "#777",
     fontSize: 14,
     marginTop: 8,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

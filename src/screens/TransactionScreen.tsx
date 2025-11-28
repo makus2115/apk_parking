@@ -5,9 +5,9 @@ import {
   ActivityIndicator,
   FlatList,
   ListRenderItem,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -241,22 +241,26 @@ const ParkingTransactionsScreen: React.FC = () => {
         </View>
 
         <View style={styles.buttonsRow}>
-          <TouchableOpacity
+          <Pressable
             onPress={() => toggleMoreInfo(item.id)}
-            style={styles.button}
+            style={({ pressed }) => [styles.button, pressed && styles.pressed]}
           >
             <Text style={styles.buttonText}>
               {expanded ? "Mniej informacji" : "Wiecej informacji"}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
 
           {active && (
-            <TouchableOpacity
+            <Pressable
               onPress={() => handleExtend(item.id)}
-              style={[styles.button, styles.extendButton]}
+              style={({ pressed }) => [
+                styles.button,
+                styles.extendButton,
+                pressed && styles.pressed,
+              ]}
             >
               <Text style={styles.buttonText}>Przedluz postoj</Text>
-            </TouchableOpacity>
+            </Pressable>
           )}
         </View>
 
@@ -408,5 +412,8 @@ const styles = StyleSheet.create({
   emptyText: {
     color: "#999",
     fontSize: 16,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

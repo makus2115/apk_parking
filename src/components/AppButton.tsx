@@ -1,16 +1,16 @@
 import React, { useContext } from "react";
 import {
+  Pressable,
+  PressableProps,
   StyleProp,
   StyleSheet,
   Text,
   TextStyle,
-  TouchableOpacity,
-  TouchableOpacityProps,
   ViewStyle,
 } from "react-native";
 import { ThemeContext } from "../theme/ThemeContext";
 
-type AppButtonProps = TouchableOpacityProps & {
+type AppButtonProps = PressableProps & {
   title: string;
   variant?: "primary" | "outline";
   textStyle?: StyleProp<TextStyle>;
@@ -22,23 +22,24 @@ const AppButton: React.FC<AppButtonProps> = ({
   variant = "primary",
   style,
   textStyle,
-  ...touchableProps
+  ...pressableProps
 }) => {
   const { colors } = useContext(ThemeContext);
   const isOutline = variant === "outline";
 
   return (
-    <TouchableOpacity
-      activeOpacity={0.85}
-      {...touchableProps}
-      style={[
+    <Pressable
+      android_ripple={{ color: "rgba(0,0,0,0.05)", foreground: true }}
+      {...pressableProps}
+      style={({ pressed }) => [
         styles.base,
         {
           backgroundColor: isOutline ? "transparent" : colors.primary,
           borderColor: colors.primary,
           borderWidth: isOutline ? 1 : 0,
         },
-        style,
+        style as ViewStyle,
+        pressed && styles.pressed,
       ]}
     >
       <Text
@@ -50,7 +51,7 @@ const AppButton: React.FC<AppButtonProps> = ({
       >
         {title}
       </Text>
-    </TouchableOpacity>
+    </Pressable>
   );
 };
 
@@ -64,6 +65,9 @@ const styles = StyleSheet.create({
   text: {
     fontSize: 16,
     fontWeight: "700",
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });
 

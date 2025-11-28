@@ -2,11 +2,11 @@ import React, { useState } from "react";
 import {
   Animated,
   Image,
+  Pressable,
   ScrollView,
   StyleSheet,
   Text,
   TextInput,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -80,28 +80,33 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
             {cars.map((car) => {
               const isActive = car.id === selectedId;
               return (
-                <TouchableOpacity
+                <Pressable
                   key={car.id}
-                  style={[styles.plateButton, isActive && styles.plateButtonActive]}
+                  style={({ pressed }) => [
+                    styles.plateButton,
+                    isActive && styles.plateButtonActive,
+                    pressed && styles.pressed,
+                  ]}
                   onPress={() => setSelectedId(car.id)}
-                  activeOpacity={0.8}
                 >
                   <Text
                     style={[styles.plateText, isActive && styles.plateTextActive]}
                   >
                     {car.plate}
                   </Text>
-                </TouchableOpacity>
+                </Pressable>
               );
             })}
 
-            <TouchableOpacity
-              style={styles.addPlateButton}
-              activeOpacity={0.8}
+            <Pressable
+              style={({ pressed }) => [
+                styles.addPlateButton,
+                pressed && styles.pressed,
+              ]}
               onPress={() => setIsAdding((prev) => !prev)}
             >
               <Text style={styles.addPlateText}>+</Text>
-            </TouchableOpacity>
+            </Pressable>
           </ScrollView>
 
           {isAdding && (
@@ -114,13 +119,15 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
                 placeholderTextColor="#888"
                 autoCapitalize="characters"
               />
-              <TouchableOpacity
-                style={styles.addPlateConfirm}
-                activeOpacity={0.85}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.addPlateConfirm,
+                  pressed && styles.pressed,
+                ]}
                 onPress={handleAddPlate}
               >
                 <Text style={styles.addPlateConfirmText}>Dodaj</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           )}
         </View>
@@ -137,25 +144,29 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
                       resizeMode="cover"
                     />
                   ) : (
-                    <TouchableOpacity
-                      style={styles.addPhotoButton}
-                      activeOpacity={0.85}
+                    <Pressable
+                      style={({ pressed }) => [
+                        styles.addPhotoButton,
+                        pressed && styles.pressed,
+                      ]}
                       onPress={() => {}}
                     >
                       <Text style={styles.addPhotoText}>Dodaj zdjęcie</Text>
-                    </TouchableOpacity>
+                    </Pressable>
                   )}
                 </View>
               </View>
 
               <View style={styles.editWrapper}>
-                <TouchableOpacity
-                  style={styles.editButton}
-                  activeOpacity={0.85}
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.editButton,
+                    pressed && styles.pressed,
+                  ]}
                   onPress={handleEdit}
                 >
                   <Text style={styles.editButtonText}>Edytuj</Text>
-                </TouchableOpacity>
+                </Pressable>
               </View>
             </>
           ) : (
@@ -326,5 +337,8 @@ const styles = StyleSheet.create({
     color: "#ccc",
     fontSize: 14,
     marginTop: 24,
+  },
+  pressed: {
+    opacity: 0.85,
   },
 });

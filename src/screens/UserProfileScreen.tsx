@@ -7,7 +7,7 @@ import {
   Switch,
   Text,
   TextInput,
-  TouchableOpacity,
+  Pressable,
   View,
 } from "react-native";
 
@@ -64,14 +64,18 @@ type ChipProps = {
 };
 
 const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
-  <TouchableOpacity
+  <Pressable
     onPress={onPress}
-    style={[styles.chip, selected && styles.chipSelected]}
+    style={({ pressed }) => [
+      styles.chip,
+      selected && styles.chipSelected,
+      pressed && styles.pressed,
+    ]}
   >
     <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
       {children}
     </Text>
-  </TouchableOpacity>
+  </Pressable>
 );
 
 const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
@@ -214,15 +218,17 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
       <Card>
         <View style={styles.cardHeaderRow}>
           <Text style={styles.label}>Dane osobowe</Text>
-          <TouchableOpacity
+          <Pressable
             onPress={() => setIsEditingPersonal((v) => !v)}
-            style={styles.editToggleBtn}
-            activeOpacity={0.85}
+            style={({ pressed }) => [
+              styles.editToggleBtn,
+              pressed && styles.pressed,
+            ]}
           >
             <Text style={styles.editToggleText}>
               {isEditingPersonal ? "Zakończ edycję" : "Edytuj dane"}
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         </View>
 
         {!isEditingPersonal ? (
@@ -375,15 +381,17 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
         )}
 
         {!showPaymentForm && (
-          <TouchableOpacity
-            style={styles.paymentBtn}
-            activeOpacity={0.9}
+          <Pressable
+            style={({ pressed }) => [
+              styles.paymentBtn,
+              pressed && styles.pressed,
+            ]}
             onPress={() => setShowPaymentForm(true)}
           >
             <Text style={styles.paymentBtnText}>
               Dodaj / zmień sposób płatności
             </Text>
-          </TouchableOpacity>
+          </Pressable>
         )}
 
         {showPaymentForm && (
@@ -435,20 +443,26 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             )}
 
             <View style={styles.paymentActionsRow}>
-              <TouchableOpacity
-                style={styles.paymentGhostBtn}
+              <Pressable
+                style={({ pressed }) => [
+                  styles.paymentGhostBtn,
+                  pressed && styles.pressed,
+                ]}
                 onPress={() => {
                   setShowPaymentForm(false);
                 }}
               >
                 <Text style={styles.paymentGhostText}>Anuluj</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.paymentApplyBtn}
+              </Pressable>
+              <Pressable
+                style={({ pressed }) => [
+                  styles.paymentApplyBtn,
+                  pressed && styles.pressed,
+                ]}
                 onPress={applyPaymentMethod}
               >
                 <Text style={styles.paymentApplyText}>Zastosuj</Text>
-              </TouchableOpacity>
+              </Pressable>
             </View>
           </View>
         )}
@@ -480,15 +494,19 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
         </View>
       </Card>
 
-      <TouchableOpacity
-        style={[styles.saveBtn, saving && { opacity: 0.7 }]}
+      <Pressable
+        style={({ pressed }) => [
+          styles.saveBtn,
+          saving && { opacity: 0.7 },
+          pressed && styles.pressed,
+        ]}
         onPress={handleSave}
         disabled={saving}
       >
         <Text style={styles.saveText}>
           {saving ? "Zapisywanie..." : "Zapisz zmiany"}
         </Text>
-      </TouchableOpacity>
+      </Pressable>
 
       <View style={{ height: 28 }} />
     </ScrollView>
@@ -720,4 +738,7 @@ const styles = StyleSheet.create({
     marginTop: 4,
   },
   saveText: { color: "#071b0a", fontSize: 17, fontWeight: "800" },
+  pressed: {
+    opacity: 0.85,
+  },
 });

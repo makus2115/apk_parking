@@ -2,9 +2,9 @@ import AntDesign from "@expo/vector-icons/AntDesign";
 import React from "react";
 import {
   ImageBackground,
+  Pressable,
   StyleSheet,
   Text,
-  TouchableOpacity,
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
@@ -46,37 +46,45 @@ const StartScreen: React.FC<StartScreenProps> = ({ navigation }) => {
           </View>
 
           <View style={styles.centerButtonContainer}>
-            <TouchableOpacity
-              style={styles.testButton}
-              onPress={() => navigation.navigate("Home")}
-              activeOpacity={0.8}
-            >
-              <Text style={styles.testButtonText}>Test ekranów</Text>
-            </TouchableOpacity>
-          </View>
+          <Pressable
+            style={({ pressed }) => [
+              styles.testButton,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => navigation.navigate("Home")}
+          >
+            <Text style={styles.testButtonText}>Test ekranów</Text>
+          </Pressable>
+        </View>
 
-          <View style={styles.footer}>
-            <TouchableOpacity
-              style={[styles.cta, styles.ctaSecondary]}
-              onPress={() => navigation.navigate("Register")}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.ctaText, styles.ctaTextSecondary]}>
-                ZAŁÓŻ KONTO
-              </Text>
-            </TouchableOpacity>
+        <View style={styles.footer}>
+          <Pressable
+            style={({ pressed }) => [
+              styles.cta,
+              styles.ctaSecondary,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => navigation.navigate("Register")}
+          >
+            <Text style={[styles.ctaText, styles.ctaTextSecondary]}>
+              ZAŁÓŻ KONTO
+            </Text>
+          </Pressable>
 
-            <TouchableOpacity
-              style={[styles.cta, styles.ctaPrimary]}
-              onPress={() => navigation.navigate("Login")}
-              activeOpacity={0.85}
-            >
-              <Text style={[styles.ctaText, styles.ctaTextPrimary]}>
-                ZALOGUJ SIĘ
-              </Text>
-            </TouchableOpacity>
-          </View>
-        </ImageBackground>
+          <Pressable
+            style={({ pressed }) => [
+              styles.cta,
+              styles.ctaPrimary,
+              pressed && styles.pressed,
+            ]}
+            onPress={() => navigation.navigate("Login")}
+          >
+            <Text style={[styles.ctaText, styles.ctaTextPrimary]}>
+              ZALOGUJ SIĘ
+            </Text>
+          </Pressable>
+        </View>
+      </ImageBackground>
       </View>
     </ScreenWrapper>
   );
@@ -93,6 +101,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     paddingTop: 10,
     paddingBottom: 5,
+  },
+  pressed: {
+    opacity: 0.85,
   },
   logoText: {
     color: "#fff",
