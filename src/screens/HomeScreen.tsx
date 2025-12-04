@@ -1,4 +1,11 @@
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, {
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   Animated,
@@ -14,8 +21,8 @@ import Icon from "react-native-vector-icons/Ionicons";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useFocusEffect } from "@react-navigation/native";
 import { ScreenWrapper } from "../components";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 
-const GREEN = "#8BC34A";
 const DRAWER_WIDTH = 260;
 
 const BALANCE_KEY = "@parking_balance" as const;
@@ -120,6 +127,8 @@ function pickTicketToDisplay(tickets: ParkingTicket[]): ParkingTicket | null {
 
 const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
   const insets = useSafeAreaInsets();
+  const { colors, isDark } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
 
   const [ticketActive, setTicketActive] = useState<boolean>(false);
   const [secondsLeft, setSecondsLeft] = useState<number>(0);
@@ -312,36 +321,36 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
       >
         {isTicket ? (
           <>
-            <Icon name="ticket-outline" size={46} color={GREEN} />
+            <Icon name="ticket-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>Kup bilet</Text>
           </>
         ) : isWallet ? (
           <>
-            <Icon name="wallet-outline" size={46} color={GREEN} />
+            <Icon name="wallet-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>Portfel</Text>
           </>
         ) : isTransaction ? (
           <>
-            <Icon name="receipt-outline" size={46} color={GREEN} />
+            <Icon name="receipt-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>
               Historia transakcji
             </Text>
           </>
         ) : isCar ? (
           <>
-            <Icon name="car-outline" size={46} color={GREEN} />
+            <Icon name="car-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>
               Dane pojazdów
             </Text>
           </>
         ) : isMap ? (
           <>
-            <Icon name="map-outline" size={46} color={GREEN} />
+            <Icon name="map-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>Lokalizacja</Text>
           </>
         ) : isUserProfile ? (
           <>
-            <Icon name="person-circle-outline" size={46} color={GREEN} />
+            <Icon name="person-circle-outline" size={46} color={colors.primary} />
             <Text style={[styles.tileDesc, styles.StyleText]}>Twój profil</Text>
           </>
         ) : (
@@ -364,8 +373,10 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
           ]}
         >
           <View style={styles.footerItem}>
-            <Icon name="home" size={26} color={GREEN} />
-            <Text style={[styles.footerLabel, { color: GREEN }]}>Home</Text>
+            <Icon name="home" size={26} color={colors.primary} />
+            <Text style={[styles.footerLabel, { color: colors.primary }]}>
+              Home
+            </Text>
           </View>
 
           <Pressable
@@ -375,7 +386,7 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             ]}
             onPress={() => navigation.navigate("Settings")}
           >
-            <Icon name="settings-outline" size={24} color="#aaa" />
+            <Icon name="settings-outline" size={24} color={colors.subtitle} />
             <Text style={styles.footerLabel}>Ustawienia</Text>
           </Pressable>
         </View>
@@ -404,7 +415,9 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
             <View style={styles.bannerStatusRow}>
               <Text style={styles.bannerTicketStatus}>
                 Bilet:{" "}
-                <Text style={{ color: ticketActive ? GREEN : "#ff5252" }}>
+                <Text
+                  style={{ color: ticketActive ? colors.primary : "#ff5252" }}
+                >
                   {ticketLabel}
                 </Text>
               </Text>
@@ -474,184 +487,185 @@ const HomeScreen: React.FC<HomeScreenProps> = ({ navigation }) => {
 
 export default HomeScreen;
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#101010",
-  },
-  banner: {
-    paddingHorizontal: 22,
-    paddingVertical: 12,
-    backgroundColor: "#1b1b1b",
-    borderBottomWidth: 1,
-    borderBottomColor: "rgba(255,255,255,0.08)",
-  },
-  bannerLeft: {
-    flex: 1,
-    justifyContent: "center",
-  },
-  bannerLeftRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  menuButton: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.25)",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 20,
-    backgroundColor: "#242424",
-  },
-  bannerRight: {
-    marginTop: 8,
-    alignItems: "flex-end",
-  },
-  bannerLabel: {
-    color: "#aaa",
-    fontSize: 13,
-    marginBottom: 4,
-  },
-  bannerValue: {
-    color: "#fff",
-    fontSize: 20,
-    fontWeight: "700",
-  },
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    banner: {
+      paddingHorizontal: 22,
+      paddingVertical: 12,
+      backgroundColor: colors.card,
+      borderBottomWidth: 1,
+      borderBottomColor: colors.border,
+    },
+    bannerLeft: {
+      flex: 1,
+      justifyContent: "center",
+    },
+    bannerLeftRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    menuButton: {
+      width: 32,
+      height: 32,
+      borderRadius: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 20,
+      backgroundColor: isDark ? "#242424" : "#f1f1f1",
+    },
+    bannerRight: {
+      marginTop: 8,
+      alignItems: "flex-end",
+    },
+    bannerLabel: {
+      color: colors.subtitle,
+      fontSize: 13,
+      marginBottom: 4,
+    },
+    bannerValue: {
+      color: colors.text,
+      fontSize: 20,
+      fontWeight: "700",
+    },
 
-  bannerStatusRow: {
-    flexDirection: "row",
-    alignItems: "center",
-  },
-  bannerTicketStatus: {
-    color: "#fff",
-    fontSize: 18,
-  },
-  bannerTime: {
-    color: "#ddd",
-    fontSize: 14,
-    marginLeft: 12,
-  },
-  bannerTopRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "flex-start",
-  },
+    bannerStatusRow: {
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    bannerTicketStatus: {
+      color: colors.text,
+      fontSize: 18,
+    },
+    bannerTime: {
+      color: colors.subtitle,
+      fontSize: 14,
+      marginLeft: 12,
+    },
+    bannerTopRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "flex-start",
+    },
 
-  bannerBottomRow: {
-    marginTop: 10,
-    alignItems: "flex-end",
-  },
-  extendButton: {
-    marginTop: 6,
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: GREEN,
-  },
-  extendButtonText: {
-    color: GREEN,
-    fontSize: 13,
-    fontWeight: "600",
-  },
+    bannerBottomRow: {
+      marginTop: 10,
+      alignItems: "flex-end",
+    },
+    extendButton: {
+      marginTop: 6,
+      paddingHorizontal: 12,
+      paddingVertical: 6,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    extendButtonText: {
+      color: colors.primary,
+      fontSize: 13,
+      fontWeight: "600",
+    },
 
-  content: {
-    flex: 1,
-  },
+    content: {
+      flex: 1,
+    },
 
-  listContent: {
-    paddingHorizontal: 24,
-    paddingTop: 24,
-    paddingBottom: 40,
-  },
-  row: {
-    justifyContent: "space-between",
-    marginBottom: 16,
-  },
+    listContent: {
+      paddingHorizontal: 24,
+      paddingTop: 24,
+      paddingBottom: 40,
+    },
+    row: {
+      justifyContent: "space-between",
+      marginBottom: 16,
+    },
 
-  tile: {
-    width: "48%",
-    aspectRatio: 1,
-    backgroundColor: "#1b1b1b",
-    padding: 14,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "rgba(255,255,255,0.08)",
-    elevation: 2,
-    justifyContent: "center",
-  },
-  StyleTile: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  StyleText: {
-    marginTop: 8,
-    textAlign: "center",
-  },
-  StyleTitle: {
-    color: GREEN,
-    fontSize: 18,
-    fontWeight: "800",
-    marginBottom: 6,
-  },
-  tileDesc: {
-    color: "#ddd",
-    fontSize: 15,
-  },
+    tile: {
+      width: "48%",
+      aspectRatio: 1,
+      backgroundColor: colors.card,
+      padding: 14,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+      elevation: 2,
+      justifyContent: "center",
+    },
+    StyleTile: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    StyleText: {
+      marginTop: 8,
+      textAlign: "center",
+    },
+    StyleTitle: {
+      color: colors.primary,
+      fontSize: 18,
+      fontWeight: "800",
+      marginBottom: 6,
+    },
+    tileDesc: {
+      color: colors.subtitle,
+      fontSize: 15,
+    },
 
-  footer: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-around",
-    paddingHorizontal: 24,
-    paddingVertical: 8,
-    borderTopWidth: 1,
-    borderTopColor: "rgba(255,255,255,0.12)",
-    backgroundColor: "#161616",
-  },
-  footerItem: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  footerLabel: {
-    marginTop: 2,
-    fontSize: 11,
-    color: "#aaa",
-  },
+    footer: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-around",
+      paddingHorizontal: 24,
+      paddingVertical: 8,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      backgroundColor: colors.card,
+    },
+    footerItem: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    footerLabel: {
+      marginTop: 2,
+      fontSize: 11,
+      color: colors.subtitle,
+    },
 
-  drawerOverlay: {
-    position: "absolute",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: "rgba(0,0,0,0.4)",
-  },
-  drawer: {
-    position: "absolute",
-    top: 0,
-    bottom: 0,
-    left: 0,
-    width: DRAWER_WIDTH,
-    backgroundColor: "#1b1b1b",
-    paddingHorizontal: 16,
-    borderRightWidth: 1,
-    borderRightColor: "rgba(255,255,255,0.12)",
-  },
-  drawerTitle: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-    marginBottom: 12,
-  },
-  drawerText: {
-    color: "#ddd",
-    fontSize: 14,
-    lineHeight: 20,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-});
+    drawerOverlay: {
+      position: "absolute",
+      top: 0,
+      left: 0,
+      right: 0,
+      bottom: 0,
+      backgroundColor: isDark ? "rgba(0,0,0,0.4)" : "rgba(0,0,0,0.08)",
+    },
+    drawer: {
+      position: "absolute",
+      top: 0,
+      bottom: 0,
+      left: 0,
+      width: DRAWER_WIDTH,
+      backgroundColor: colors.card,
+      paddingHorizontal: 16,
+      borderRightWidth: 1,
+      borderRightColor: colors.border,
+    },
+    drawerTitle: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: "700",
+      marginBottom: 12,
+    },
+    drawerText: {
+      color: colors.subtitle,
+      fontSize: 14,
+      lineHeight: 20,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+  });

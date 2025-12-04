@@ -32,7 +32,9 @@ const DarkNavTheme: Theme = {
 export const useAppThemeLogic = () => {
   const systemScheme = useColorScheme();
   const [forceDark, setForceDark] = useState<boolean>(false);
-  const [biometricsEnabled, setBiometricsEnabled] = useState<boolean>(false);
+  const [biometricsEnabled, setBiometricsEnabled] = useState<boolean>(true);
+  const [notificationsEnabled, setNotificationsEnabled] =
+    useState<boolean>(false);
 
   const isDark = forceDark || systemScheme === "dark";
 
@@ -43,6 +45,8 @@ export const useAppThemeLogic = () => {
       setForceDark,
       biometricsEnabled,
       setBiometricsEnabled,
+      notificationsEnabled,
+      setNotificationsEnabled,
       colors: isDark
         ? {
             background: "#101010",
@@ -61,7 +65,7 @@ export const useAppThemeLogic = () => {
             primary: GREEN,
           },
     }),
-    [isDark, forceDark, biometricsEnabled]
+    [isDark, forceDark, biometricsEnabled, notificationsEnabled]
   );
 
   const navigationTheme = isDark ? DarkNavTheme : LightNavTheme;

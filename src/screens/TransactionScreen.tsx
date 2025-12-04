@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ActivityIndicator,
@@ -11,6 +11,7 @@ import {
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 
 const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
 const BALANCE_KEY = "@parking_balance" as const;
@@ -115,9 +116,9 @@ function getRemainingMinutes(ticket: ParkingTicket): number {
   return diffMin > 0 ? diffMin : 0;
 }
 
-const GREEN = "#8BC34A";
-
 const ParkingTransactionsScreen: React.FC = () => {
+  const { colors, isDark } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
   const [tickets, setTickets] = useState<ParkingTicket[]>([]);
   const [loading, setLoading] = useState<boolean>(true);
   const [expandedId, setExpandedId] = useState<string | null>(null);
@@ -288,7 +289,7 @@ const ParkingTransactionsScreen: React.FC = () => {
         <View style={styles.container}>
         <Text style={styles.title}>Historia biletów</Text>
         <View style={styles.center}>
-          <ActivityIndicator size="large" />
+          <ActivityIndicator size="large" color={colors.primary} />
         </View>
         </View>
       </ScreenWrapper>
@@ -319,101 +320,104 @@ const ParkingTransactionsScreen: React.FC = () => {
 
 export default ParkingTransactionsScreen;
 
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#101010",
-    padding: 20,
-  },
-  title: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "bold",
-    marginBottom: 16,
-    marginTop: 16,
-    textAlign: "center",
-  },
-  listContainer: {
-    paddingBottom: 20,
-  },
-  transactionContainer: {
-    backgroundColor: "#1e1e1e",
-    padding: 14,
-    borderRadius: 10,
-    marginBottom: 10,
-  },
-  transactionText: {
-    color: "#fff",
-    fontSize: 15,
-    marginBottom: 4,
-  },
-  bold: {
-    fontWeight: "700",
-  },
-  statusRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: 5,
-    marginBottom: 10,
-  },
-  statusText: {
-    fontSize: 14,
-    fontWeight: "bold",
-  },
-  statusActive: {
-    color: "#4CAF50",
-  },
-  statusEnded: {
-    color: "#FF5252",
-  },
-  statusFuture: {
-    color: "#FFCA28",
-  },
-  remainingText: {
-    color: "#ccc",
-    fontSize: 14,
-  },
-  buttonsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-  },
-  button: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 8,
-    backgroundColor: "#333",
-  },
-  extendButton: {
-    backgroundColor: GREEN,
-  },
-  buttonText: {
-    color: "#fff",
-    fontSize: 14,
-    fontWeight: "600",
-  },
-  moreInfoContainer: {
-    marginTop: 10,
-    borderTopWidth: 1,
-    borderTopColor: "#333",
-    paddingTop: 10,
-  },
-  moreInfoText: {
-    color: "#ccc",
-    fontSize: 14,
-    marginBottom: 3,
-  },
-  center: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  emptyText: {
-    color: "#999",
-    fontSize: 16,
-  },
-  pressed: {
-    opacity: 0.85,
-  },
-});
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    container: {
+      flex: 1,
+      backgroundColor: colors.background,
+      padding: 20,
+    },
+    title: {
+      color: colors.text,
+      fontSize: 24,
+      fontWeight: "bold",
+      marginBottom: 16,
+      marginTop: 16,
+      textAlign: "center",
+    },
+    listContainer: {
+      paddingBottom: 20,
+    },
+    transactionContainer: {
+      backgroundColor: colors.card,
+      padding: 14,
+      borderRadius: 10,
+      marginBottom: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    transactionText: {
+      color: colors.text,
+      fontSize: 15,
+      marginBottom: 4,
+    },
+    bold: {
+      fontWeight: "700",
+    },
+    statusRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginTop: 5,
+      marginBottom: 10,
+    },
+    statusText: {
+      fontSize: 14,
+      fontWeight: "bold",
+    },
+    statusActive: {
+      color: colors.primary,
+    },
+    statusEnded: {
+      color: "#FF5252",
+    },
+    statusFuture: {
+      color: "#FFCA28",
+    },
+    remainingText: {
+      color: colors.subtitle,
+      fontSize: 14,
+    },
+    buttonsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 10,
+    },
+    button: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 8,
+      backgroundColor: isDark ? "#2f2f2f" : "#e8e8e8",
+    },
+    extendButton: {
+      backgroundColor: colors.primary,
+    },
+    buttonText: {
+      color: colors.text,
+      fontSize: 14,
+      fontWeight: "600",
+    },
+    moreInfoContainer: {
+      marginTop: 10,
+      borderTopWidth: 1,
+      borderTopColor: colors.border,
+      paddingTop: 10,
+    },
+    moreInfoText: {
+      color: colors.subtitle,
+      fontSize: 14,
+      marginBottom: 3,
+    },
+    center: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    emptyText: {
+      color: colors.subtitle,
+      fontSize: 16,
+    },
+    pressed: {
+      opacity: 0.85,
+    },
+  });

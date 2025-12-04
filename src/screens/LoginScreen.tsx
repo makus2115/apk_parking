@@ -61,7 +61,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       });
 
       if (result.success) {
-        navigation.replace("Start");
+        navigation.replace("Home");
       } else {
         Alert.alert("Niepowodzenie", "Nie udało się potwierdzić tożsamości.");
       }
@@ -76,10 +76,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       return;
     }
     Alert.alert("Logowanie", `Zalogowano jako ${email}`);
-  };
-
-  const handleGoogleLogin = (): void => {
-    Alert.alert("Logowanie", "Zalogowano przez Google");
   };
 
   return (
@@ -115,23 +111,6 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
             onPress={handleLogin}
           >
             <Text style={styles.buttonText}>Zaloguj</Text>
-          </Pressable>
-
-          <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              styles.googleButton,
-              pressed && styles.pressed,
-            ]}
-            onPress={handleGoogleLogin}
-          >
-            <MaterialCommunityIcons
-              name="google"
-              size={24}
-              color="white"
-              style={styles.googleIcon}
-            />
-            <Text style={styles.buttonText}>Zaloguj przez Google</Text>
           </Pressable>
 
           {canUseBiometrics && (
@@ -199,14 +178,6 @@ const styles = StyleSheet.create({
     borderRadius: 10,
     alignItems: "center",
     marginTop: 10,
-  },
-  googleButton: {
-    flexDirection: "row",
-    justifyContent: "center",
-    backgroundColor: "#615f5fff",
-  },
-  googleIcon: {
-    marginRight: 10,
   },
   buttonText: {
     color: "#fff",

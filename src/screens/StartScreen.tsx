@@ -45,18 +45,6 @@ const StartScreen: React.FC<StartScreenProps> = ({ navigation }) => {
             </Text>
           </View>
 
-          <View style={styles.centerButtonContainer}>
-          <Pressable
-            style={({ pressed }) => [
-              styles.testButton,
-              pressed && styles.pressed,
-            ]}
-            onPress={() => navigation.navigate("Home")}
-          >
-            <Text style={styles.testButtonText}>Test ekranów</Text>
-          </Pressable>
-        </View>
-
         <View style={styles.footer}>
           <Pressable
             style={({ pressed }) => [
@@ -142,23 +130,6 @@ const styles = StyleSheet.create({
     color: "#fff",
     fontSize: 16,
     lineHeight: 22,
-  },
-  centerButtonContainer: {
-    flex: 1,
-    justifyContent: "center",
-    alignItems: "center",
-  },
-  testButton: {
-    backgroundColor: GREEN,
-    paddingHorizontal: 24,
-    paddingVertical: 14,
-    borderRadius: 8,
-    elevation: 3,
-  },
-  testButtonText: {
-    fontSize: 18,
-    fontWeight: "700",
-    color: "#0B2B13",
   },
   footer: {
     position: "absolute",

@@ -1,4 +1,4 @@
-import React, { useContext, useMemo } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -7,10 +7,13 @@ import {
   Pressable,
   View,
 } from "react-native";
+import appConfig from "../../app.json";
 import { ScreenWrapper } from "../components";
-import { ThemeContext, ThemeColors } from "../theme/ThemeContext";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
+const LOGOUT_COLOR = "#c53b3bff";
+const APP_VERSION = appConfig.expo?.version ?? "1.0.0";
 
 type SettingsScreenProps = {
   navigation: any;
@@ -23,13 +26,60 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setForceDark,
     biometricsEnabled,
     setBiometricsEnabled,
+    notificationsEnabled,
+    setNotificationsEnabled,
     colors,
   } = useContext(ThemeContext);
 
+  const initialSettingsRef = useRef({
+    forceDark,
+    biometricsEnabled,
+    notificationsEnabled,
+  });
+
+  const [draftForceDark, setDraftForceDark] = useState(forceDark);
+  const [draftBiometricsEnabled, setDraftBiometricsEnabled] =
+    useState(biometricsEnabled);
+  const [draftNotificationsEnabled, setDraftNotificationsEnabled] =
+    useState(notificationsEnabled);
+
+  useEffect(() => {
+    setDraftForceDark(forceDark);
+    setDraftBiometricsEnabled(biometricsEnabled);
+    setDraftNotificationsEnabled(notificationsEnabled);
+    initialSettingsRef.current = {
+      forceDark,
+      biometricsEnabled,
+      notificationsEnabled,
+    };
+  }, [forceDark, biometricsEnabled, notificationsEnabled]);
+
   const styles = useMemo(() => createStyles(colors), [colors]);
 
-  const handleDarkModeToggle = (value: boolean) => setForceDark(value);
-  const handleBiometricsToggle = (value: boolean) => setBiometricsEnabled(value);
+  const handleDarkModeToggle = (value: boolean) => setDraftForceDark(value);
+  const handleBiometricsToggle = (value: boolean) =>
+    setDraftBiometricsEnabled(value);
+  const handleNotificationsToggle = (value: boolean) =>
+    setDraftNotificationsEnabled(value);
+  const handleLogout = () => navigation.navigate("Start");
+  const handleCancel = () => {
+    const {
+      forceDark: initialForceDark,
+      biometricsEnabled: initialBiometrics,
+      notificationsEnabled: initialNotifications,
+    } = initialSettingsRef.current;
+
+    setDraftForceDark(initialForceDark);
+    setDraftBiometricsEnabled(initialBiometrics);
+    setDraftNotificationsEnabled(initialNotifications);
+    navigation.goBack();
+  };
+  const handleSave = () => {
+    setForceDark(draftForceDark);
+    setBiometricsEnabled(draftBiometricsEnabled);
+    setNotificationsEnabled(draftNotificationsEnabled);
+    navigation.navigate("Home");
+  };
 
   return (
     <ScreenWrapper
@@ -41,14 +91,14 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               styles.btnOutline,
               pressed && styles.pressed,
             ]}
-            onPress={() => navigation.goBack()}
+            onPress={handleCancel}
           >
             <Text style={[styles.btnText, styles.btnTextOutline]}>Anuluj</Text>
           </Pressable>
 
           <Pressable
             style={({ pressed }) => [styles.btn, pressed && styles.pressed]}
-            onPress={() => navigation.navigate("Start")}
+            onPress={handleSave}
           >
             <Text style={styles.btnText}>Zapisz i wróć</Text>
           </Pressable>
@@ -78,10 +128,46 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Text>
             </View>
             <Switch
-              value={forceDark}
+              value={draftForceDark}
               onValueChange={handleDarkModeToggle}
-              thumbColor={forceDark ? GREEN : "#f4f3f4"}
+              thumbColor={draftForceDark ? GREEN : "#f4f3f4"}
             />
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle}>Powiadomienia</Text>
+              <Text style={styles.rowSubtitle}>
+                Zezwol na wysylanie przypomnien o parkowaniu i alertow.
+              </Text>
+            </View>
+            <Switch
+              value={draftNotificationsEnabled}
+              onValueChange={handleNotificationsToggle}
+              thumbColor={draftNotificationsEnabled ? GREEN : "#f4f3f4"}
+            />
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle}>Wersja aplikacji</Text>
+              <Text style={styles.rowSubtitle}>
+                Aktualnie zainstalowana wersja aplikacji.
+              </Text>
+            </View>
+            <View style={styles.versionBadge}>
+              <Text style={styles.versionText}>v{APP_VERSION}</Text>
+            </View>
+          </View>
+
+          <View style={styles.row}>
+            <View style={styles.rowText}>
+              <Text style={styles.rowTitle}>Polityka prywatności</Text>
+              <Text style={styles.rowSubtitle}>
+                Korzystając z aplikacji, wyrażasz zgodę na naszą politykę
+                prywatności.
+              </Text>
+            </View>
           </View>
 
           <Text style={styles.sectionTitle}>Bezpieczeństwo</Text>
@@ -95,11 +181,27 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
               </Text>
             </View>
             <Switch
-              value={biometricsEnabled}
+              value={draftBiometricsEnabled}
               onValueChange={handleBiometricsToggle}
-              thumbColor={biometricsEnabled ? GREEN : "#f4f3f4"}
+              thumbColor={draftBiometricsEnabled ? GREEN : "#f4f3f4"}
             />
           </View>
+
+          <Pressable
+            onPress={handleLogout}
+            style={({ pressed }) => [
+              styles.row,
+              styles.logoutRow,
+              pressed && styles.pressed,
+            ]}
+          >
+            <View style={styles.rowText}>
+              <Text style={[styles.rowTitle, styles.logoutText]}>Wyloguj</Text>
+              <Text style={[styles.rowSubtitle, styles.logoutText]}>
+                Powrot do ekranu startowego i zakonczenie sesji.
+              </Text>
+            </View>
+          </Pressable>
         </ScrollView>
       </View>
     </ScreenWrapper>
@@ -170,6 +272,21 @@ const createStyles = (colors: ThemeColors) =>
       color: colors.subtitle,
       fontSize: 12,
     },
+    versionBadge: {
+      backgroundColor: colors.background,
+      borderColor: colors.border,
+      borderWidth: 1,
+      borderRadius: 8,
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      minWidth: 64,
+      alignItems: "center",
+    },
+    versionText: {
+      color: colors.text,
+      fontSize: 13,
+      fontWeight: "800",
+    },
     footer: {
       flexDirection: "row",
       padding: 16,
@@ -196,6 +313,13 @@ const createStyles = (colors: ThemeColors) =>
     },
     btnTextOutline: {
       color: GREEN,
+    },
+    logoutRow: {
+      backgroundColor: "rgba(211,47,47,0.08)",
+      borderColor: LOGOUT_COLOR,
+    },
+    logoutText: {
+      color: LOGOUT_COLOR,
     },
     pressed: {
       opacity: 0.85,

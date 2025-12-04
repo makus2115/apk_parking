@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useMemo, useState } from "react";
+import React, { useContext, useMemo, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -11,11 +11,10 @@ import {
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 
 const TICKETS_STORAGE_KEY = "@parking_tickets" as const;
 const BALANCE_KEY = "@parking_balance" as const;
-
-const GREEN = "#8BC34A";
 
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
@@ -101,41 +100,15 @@ type ChipProps = {
   children: React.ReactNode;
 };
 
-const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
-  <Pressable
-    onPress={onPress}
-    style={({ pressed }) => [
-      styles.chip,
-      selected && styles.chipSelected,
-      pressed && styles.pressed,
-    ]}
-  >
-    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-      {children}
-    </Text>
-  </Pressable>
-);
-
 type CardProps = {
   children: React.ReactNode;
 };
-
-const Card: React.FC<CardProps> = ({ children }) => (
-  <View style={styles.card}>{children}</View>
-);
 
 type RowProps = {
   label: string;
   value: string | number;
   big?: boolean;
 };
-
-const Row: React.FC<RowProps> = ({ label, value, big }) => (
-  <View style={styles.row}>
-    <Text style={[styles.rowLabel, big && styles.rowBig]}>{label}</Text>
-    <Text style={[styles.rowValue, big && styles.rowBig]}>{value}</Text>
-  </View>
-);
 
 async function saveTicketGlobal(ticket: ParkingTicket): Promise<void> {
   try {
@@ -171,6 +144,31 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   const [durationMin, setDurationMin] = useState<number>(60);
   const [notifyBeforeEnd, setNotifyBeforeEnd] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
+  const { colors, isDark } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {children}
+      </Text>
+    </Pressable>
+  );
+  const Card: React.FC<CardProps> = ({ children }) => (
+    <View style={styles.card}>{children}</View>
+  );
+  const Row: React.FC<RowProps> = ({ label, value, big }) => (
+    <View style={styles.row}>
+      <Text style={[styles.rowLabel, big && styles.rowBig]}>{label}</Text>
+      <Text style={[styles.rowValue, big && styles.rowBig]}>{value}</Text>
+    </View>
+  );
 
   const now = new Date();
   const startOffsetParsed = Number.parseInt(startOffsetMin || "0", 10);
@@ -295,7 +293,7 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
               <TextInput
                 style={[styles.input, { flex: 1 }]}
                 placeholder="Np. WX 12345"
-                placeholderTextColor="#aaa"
+                placeholderTextColor={colors.subtitle}
                 autoCapitalize="characters"
                 value={newPlate}
                 onChangeText={setNewPlate}
@@ -377,7 +375,7 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
                 keyboardType="number-pad"
                 style={[styles.input, styles.inputSmall]}
                 placeholder="min"
-                placeholderTextColor="#aaa"
+                placeholderTextColor={colors.subtitle}
                 value={startOffsetMin}
                 onChangeText={(t) => setStartOffsetMin(t.replace(/[^\d]/g, ""))}
               />
@@ -436,8 +434,11 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
             <Switch
               value={notifyBeforeEnd}
               onValueChange={setNotifyBeforeEnd}
-              thumbColor={notifyBeforeEnd ? "#e6f5ff" : "#777"}
-              trackColor={{ true: GREEN, false: "#333" }}
+              thumbColor={notifyBeforeEnd ? colors.primary : colors.border}
+              trackColor={{
+                true: colors.primary,
+                false: colors.border,
+              }}
             />
           </View>
         </Card>
@@ -473,180 +474,181 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
 
 export default ParkingTicketScreen;
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#101010" },
-  container: { padding: 16, paddingBottom: 40 },
-  heading: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 16,
-  },
-  card: {
-    backgroundColor: "#161616",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#242424",
-  },
-  label: {
-    color: "#bbb",
-    fontSize: 13,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-  },
-  chip: {
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 999,
-    backgroundColor: "#1e1e1e",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipSelected: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  chipText: { color: "#ddd", fontSize: 14 },
-  chipTextSelected: { color: "#fff", fontWeight: "700" },
-  chipAdd: { borderStyle: "dashed" },
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
+    container: { padding: 16, paddingBottom: 40 },
+    heading: {
+      color: colors.text,
+      fontSize: 28,
+      fontWeight: "800",
+      marginBottom: 16,
+    },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    label: {
+      color: colors.subtitle,
+      fontSize: 13,
+      marginBottom: 8,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    rowWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+    },
+    chip: {
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 999,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+      borderWidth: 1,
+      borderColor: colors.border,
+      marginRight: 8,
+      marginBottom: 8,
+    },
+    chipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    chipText: { color: colors.subtitle, fontSize: 14 },
+    chipTextSelected: { color: colors.text, fontWeight: "700" },
+    chipAdd: { borderStyle: "dashed" },
 
-  addPlateRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 10,
-  },
-  input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    padding: 14,
-    borderRadius: 10,
-    fontSize: 16,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-  },
-  inputSmall: {
-    width: 92,
-    textAlign: "center",
-    paddingHorizontal: 10,
-  },
+    addPlateRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 10,
+    },
+    input: {
+      backgroundColor: isDark ? "#1e1e1e" : "#f7f7f7",
+      color: colors.text,
+      padding: 14,
+      borderRadius: 10,
+      fontSize: 16,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    inputSmall: {
+      width: 92,
+      textAlign: "center",
+      paddingHorizontal: 10,
+    },
 
-  btn: {
-    backgroundColor: GREEN,
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: GREEN,
-  },
-  btnText: { color: "#fff", fontWeight: "700" },
+    btn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 12,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.primary,
+    },
+    btnText: { color: "#0b2b13", fontWeight: "700" },
 
-  btnGhost: {
-    backgroundColor: "transparent",
-    paddingVertical: 12,
-    paddingHorizontal: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-  },
-  btnGhostText: { color: "#ddd", fontWeight: "600" },
+    btnGhost: {
+      backgroundColor: "transparent",
+      paddingVertical: 12,
+      paddingHorizontal: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    btnGhostText: { color: colors.text, fontWeight: "600" },
 
-  toggleRow: {
-    flexDirection: "row",
-    gap: 10,
-    marginBottom: 8,
-  },
-  toggleBtn: {
-    flex: 1,
-    alignItems: "center",
-    paddingVertical: 12,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    backgroundColor: "#1e1e1e",
-  },
-  toggleSelected: {
-    backgroundColor: "#0a0f1a",
-    borderColor: GREEN,
-  },
-  toggleText: { color: "#bbb", fontWeight: "600" },
-  toggleTextSel: { color: "#e6f5ff" },
+    toggleRow: {
+      flexDirection: "row",
+      gap: 10,
+      marginBottom: 8,
+    },
+    toggleBtn: {
+      flex: 1,
+      alignItems: "center",
+      paddingVertical: 12,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+    },
+    toggleSelected: {
+      backgroundColor: isDark ? "#0a0f1a" : "#e8f5e9",
+      borderColor: colors.primary,
+    },
+    toggleText: { color: colors.subtitle, fontWeight: "600" },
+    toggleTextSel: { color: colors.text },
 
-  inlineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 8,
-  },
-  inlineLabel: { color: "#ddd" },
-  inlineSuffix: { color: "#aaa" },
+    inlineRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 8,
+    },
+    inlineLabel: { color: colors.text },
+    inlineSuffix: { color: colors.subtitle },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#242424",
-    marginVertical: 12,
-  },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
 
-  durationRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 12,
-    marginTop: 4,
-  },
-  qtyBtn: {
-    width: 76,
-    height: 44,
-    borderRadius: 10,
-    backgroundColor: "#1e1e1e",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  qtyText: { color: "#fff", fontSize: 18, fontWeight: "700" },
-  btnDisabled: { opacity: 0.4 },
-  durationText: { color: "#fff", fontSize: 18, fontWeight: "700" },
+    durationRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      justifyContent: "space-between",
+      gap: 12,
+      marginTop: 4,
+    },
+    qtyBtn: {
+      width: 76,
+      height: 44,
+      borderRadius: 10,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    qtyText: { color: colors.text, fontSize: 18, fontWeight: "700" },
+    btnDisabled: { opacity: 0.4 },
+    durationText: { color: colors.text, fontSize: 18, fontWeight: "700" },
 
-  hint: { color: "#8a8a8a", fontSize: 12, marginTop: 6 },
+    hint: { color: colors.subtitle, fontSize: 12, marginTop: 6 },
 
-  reminderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  reminderTitle: { color: "#fff", fontSize: 16, fontWeight: "700" },
+    reminderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    reminderTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
 
-  row: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    marginTop: 8,
-  },
-  rowLabel: { color: "#bbb" },
-  rowValue: { color: "#fff", fontWeight: "600" },
-  rowBig: { fontSize: 18 },
+    row: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      marginTop: 8,
+    },
+    rowLabel: { color: colors.subtitle },
+    rowValue: { color: colors.text, fontWeight: "600" },
+    rowBig: { fontSize: 18 },
 
-  payBtn: {
-    backgroundColor: "#00C853",
-    paddingVertical: 16,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#1b5e20",
-    marginTop: 4,
-  },
-  payText: { color: "#071b0a", fontSize: 18, fontWeight: "800" },
-  pressed: {
-    opacity: 0.85,
-  },
-});
+    payBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 16,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      marginTop: 4,
+    },
+    payText: { color: "#071b0a", fontSize: 18, fontWeight: "800" },
+    pressed: {
+      opacity: 0.85,
+    },
+  });

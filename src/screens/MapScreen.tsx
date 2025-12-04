@@ -1,16 +1,17 @@
-import React, { useEffect, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import { ActivityIndicator, StyleSheet, Text, View } from "react-native";
 import MapView, { Marker, Region } from "react-native-maps";
 import * as Location from "expo-location";
 import { ScreenWrapper } from "../components";
-
-const GREEN = "#8BC34A";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 
 type MapScreenProps = {
   navigation: any;
 };
 
 const MapScreen: React.FC<MapScreenProps> = () => {
+  const { colors } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(colors), [colors]);
   const [region, setRegion] = useState<Region | null>(null);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -56,7 +57,7 @@ const MapScreen: React.FC<MapScreenProps> = () => {
       <View style={styles.root}>
         {loading && (
           <View style={styles.centerOverlay}>
-            <ActivityIndicator size="large" color={GREEN} />
+            <ActivityIndicator size="large" color={colors.primary} />
             <Text style={styles.infoText}>Pobieranie lokalizacji...</Text>
           </View>
         )}
@@ -84,28 +85,29 @@ const MapScreen: React.FC<MapScreenProps> = () => {
 
 export default MapScreen;
 
-const styles = StyleSheet.create({
-  root: {
-    flex: 1,
-    backgroundColor: "#101010",
-  },
-  centerOverlay: {
-    flex: 1,
-    alignItems: "center",
-    justifyContent: "center",
-    paddingHorizontal: 24,
-    backgroundColor: "#101010",
-  },
-  infoText: {
-    marginTop: 12,
-    color: "#ddd",
-    fontSize: 14,
-    textAlign: "center",
-  },
-  errorText: {
-    marginTop: 12,
-    color: "#ff5252",
-    fontSize: 14,
-    textAlign: "center",
-  },
-});
+const createStyles = (colors: ThemeColors) =>
+  StyleSheet.create({
+    root: {
+      flex: 1,
+      backgroundColor: colors.background,
+    },
+    centerOverlay: {
+      flex: 1,
+      alignItems: "center",
+      justifyContent: "center",
+      paddingHorizontal: 24,
+      backgroundColor: colors.background,
+    },
+    infoText: {
+      marginTop: 12,
+      color: colors.subtitle,
+      fontSize: 14,
+      textAlign: "center",
+    },
+    errorText: {
+      marginTop: 12,
+      color: "#ff5252",
+      fontSize: 14,
+      textAlign: "center",
+    },
+  });

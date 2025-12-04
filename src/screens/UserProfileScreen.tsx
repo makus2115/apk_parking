@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useState } from "react";
 import {
   Alert,
   ScrollView,
@@ -10,8 +10,7 @@ import {
   Pressable,
   View,
 } from "react-native";
-
-const GREEN = "#8BC34A";
+import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 const PROFILE_STORAGE_KEY = "@parking_user_profile" as const;
 
 const ZONES = {
@@ -52,35 +51,35 @@ const defaultProfile: UserProfile = {
   paymentMethodLabel: "",
 };
 
-const Card: React.FC<{ children: React.ReactNode; style?: object }> = ({
-  children,
-  style,
-}) => <View style={[styles.card, style]}>{children}</View>;
-
 type ChipProps = {
   selected: boolean;
   onPress: () => void;
   children: React.ReactNode;
 };
 
-const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
-  <Pressable
-    onPress={onPress}
-    style={({ pressed }) => [
-      styles.chip,
-      selected && styles.chipSelected,
-      pressed && styles.pressed,
-    ]}
-  >
-    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-      {children}
-    </Text>
-  </Pressable>
-);
-
 const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   navigation,
 }) => {
+  const { colors, isDark } = useContext(ThemeContext);
+  const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const Card: React.FC<{ children: React.ReactNode; style?: object }> = ({
+    children,
+    style,
+  }) => <View style={[styles.card, style]}>{children}</View>;
+  const Chip: React.FC<ChipProps> = ({ selected, onPress, children }) => (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.chip,
+        selected && styles.chipSelected,
+        pressed && styles.pressed,
+      ]}
+    >
+      <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+        {children}
+      </Text>
+    </Pressable>
+  );
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
   const [defaultDurationInput, setDefaultDurationInput] =
     useState<string>("60");
@@ -190,7 +189,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   if (loading) {
     return (
       <View style={[styles.screen, styles.center]}>
-        <Text style={{ color: "#fff" }}>Wczytywanie profilu...</Text>
+        <Text style={{ color: colors.text }}>Wczytywanie profilu...</Text>
       </View>
     );
   }
@@ -258,7 +257,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             <TextInput
               style={styles.input}
               placeholder="Np. Jan Kowalski"
-              placeholderTextColor="#777"
+              placeholderTextColor={colors.subtitle}
               value={profile.fullName}
               onChangeText={(t) =>
                 setProfile((p) => ({
@@ -272,7 +271,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             <TextInput
               style={styles.input}
               placeholder="np. jan.kowalski@example.com"
-              placeholderTextColor="#777"
+              placeholderTextColor={colors.subtitle}
               keyboardType="email-address"
               autoCapitalize="none"
               value={profile.email}
@@ -288,7 +287,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
             <TextInput
               style={styles.input}
               placeholder="np. 500 600 700"
-              placeholderTextColor="#777"
+              placeholderTextColor={colors.subtitle}
               keyboardType="phone-pad"
               value={profile.phone}
               onChangeText={(t) =>
@@ -328,7 +327,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           <TextInput
             style={[styles.input, styles.inputSmall]}
             placeholder="min"
-            placeholderTextColor="#777"
+            placeholderTextColor={colors.subtitle}
             keyboardType="number-pad"
             value={defaultDurationInput}
             onChangeText={(t) =>
@@ -357,8 +356,8 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 notifyBeforeEnd: v,
               }))
             }
-            thumbColor={profile.notifyBeforeEnd ? "#e6f5ff" : "#777"}
-            trackColor={{ true: GREEN, false: "#333" }}
+            thumbColor={profile.notifyBeforeEnd ? colors.primary : colors.border}
+            trackColor={{ true: colors.primary, false: colors.border }}
           />
         </View>
       </Card>
@@ -418,7 +417,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 <TextInput
                   style={styles.input}
                   placeholder="np. 1234"
-                  placeholderTextColor="#777"
+                  placeholderTextColor={colors.subtitle}
                   keyboardType="number-pad"
                   maxLength={4}
                   value={cardLast4}
@@ -435,7 +434,7 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 <TextInput
                   style={styles.input}
                   placeholder="np. Mój BLIK"
-                  placeholderTextColor="#777"
+                  placeholderTextColor={colors.subtitle}
                   value={blikAlias}
                   onChangeText={setBlikAlias}
                 />
@@ -488,8 +487,8 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
                 allowMarketing: v,
               }))
             }
-            thumbColor={profile.allowMarketing ? "#e6f5ff" : "#777"}
-            trackColor={{ true: GREEN, false: "#333" }}
+            thumbColor={profile.allowMarketing ? colors.primary : colors.border}
+            trackColor={{ true: colors.primary, false: colors.border }}
           />
         </View>
       </Card>
@@ -515,230 +514,230 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
 
 export default UserProfileScreen;
 
-const styles = StyleSheet.create({
-  screen: { flex: 1, backgroundColor: "#101010" },
-  container: { padding: 16, paddingBottom: 40 },
-  heading: {
-    color: "#fff",
-    fontSize: 28,
-    fontWeight: "800",
-    marginBottom: 16,
-  },
-  center: {
-    alignItems: "center",
-    justifyContent: "center",
-  },
+const createStyles = (colors: ThemeColors, isDark: boolean) =>
+  StyleSheet.create({
+    screen: { flex: 1, backgroundColor: colors.background },
+    container: { padding: 16, paddingBottom: 40 },
+    heading: {
+      color: colors.text,
+      fontSize: 28,
+      fontWeight: "800",
+      marginBottom: 16,
+    },
+    center: {
+      alignItems: "center",
+      justifyContent: "center",
+    },
 
-  card: {
-    backgroundColor: "#161616",
-    borderRadius: 14,
-    padding: 16,
-    marginBottom: 12,
-    borderWidth: 1,
-    borderColor: "#242424",
-  },
+    card: {
+      backgroundColor: colors.card,
+      borderRadius: 14,
+      padding: 16,
+      marginBottom: 12,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
 
-  avatarCard: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  avatarCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: "#1e1e1e",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    alignItems: "center",
-    justifyContent: "center",
-    marginRight: 12,
-  },
-  avatarInitials: {
-    color: "#fff",
-    fontSize: 24,
-    fontWeight: "800",
-  },
-  avatarName: {
-    color: "#fff",
-    fontSize: 18,
-    fontWeight: "700",
-  },
-  avatarSubtitle: {
-    color: "#8a8a8a",
-    fontSize: 13,
-    marginTop: 2,
-  },
+    avatarCard: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    avatarCircle: {
+      width: 64,
+      height: 64,
+      borderRadius: 32,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+      borderWidth: 1,
+      borderColor: colors.border,
+      alignItems: "center",
+      justifyContent: "center",
+      marginRight: 12,
+    },
+    avatarInitials: {
+      color: colors.text,
+      fontSize: 24,
+      fontWeight: "800",
+    },
+    avatarName: {
+      color: colors.text,
+      fontSize: 18,
+      fontWeight: "700",
+    },
+    avatarSubtitle: {
+      color: colors.subtitle,
+      fontSize: 13,
+      marginTop: 2,
+    },
 
-  label: {
-    color: "#bbb",
-    fontSize: 13,
-    marginBottom: 8,
-    textTransform: "uppercase",
-    letterSpacing: 0.5,
-  },
-  fieldLabel: {
-    color: "#ddd",
-    fontSize: 14,
-    marginTop: 10,
-    marginBottom: 4,
-  },
+    label: {
+      color: colors.subtitle,
+      fontSize: 13,
+      marginBottom: 8,
+      textTransform: "uppercase",
+      letterSpacing: 0.5,
+    },
+    fieldLabel: {
+      color: colors.text,
+      fontSize: 14,
+      marginTop: 10,
+      marginBottom: 4,
+    },
 
-  cardHeaderRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: 4,
-  },
-  editToggleBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    backgroundColor: "#1e1e1e",
-  },
-  editToggleText: {
-    color: "#ddd",
-    fontSize: 12,
-    fontWeight: "600",
-  },
+    cardHeaderRow: {
+      flexDirection: "row",
+      justifyContent: "space-between",
+      alignItems: "center",
+      marginBottom: 4,
+    },
+    editToggleBtn: {
+      paddingHorizontal: 10,
+      paddingVertical: 6,
+      borderRadius: 999,
+      borderWidth: 1,
+      borderColor: colors.border,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+    },
+    editToggleText: {
+      color: colors.text,
+      fontSize: 12,
+      fontWeight: "600",
+    },
 
-  readonlyRow: {
-    marginTop: 8,
-  },
-  readonlyLabel: {
-    color: "#888",
-    fontSize: 12,
-    marginBottom: 2,
-  },
-  readonlyValue: {
-    color: "#fff",
-    fontSize: 15,
-    fontWeight: "600",
-  },
+    readonlyRow: {
+      marginTop: 8,
+    },
+    readonlyLabel: {
+      color: colors.subtitle,
+      fontSize: 12,
+      marginBottom: 2,
+    },
+    readonlyValue: {
+      color: colors.text,
+      fontSize: 15,
+      fontWeight: "600",
+    },
 
-  input: {
-    backgroundColor: "#1e1e1e",
-    color: "#fff",
-    padding: 12,
-    borderRadius: 10,
-    fontSize: 15,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-  },
-  inputSmall: {
-    width: 100,
-    textAlign: "center",
-  },
+    input: {
+      backgroundColor: isDark ? "#1e1e1e" : "#f7f7f7",
+      color: colors.text,
+      padding: 12,
+      borderRadius: 10,
+      fontSize: 15,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    inputSmall: {
+      width: 100,
+      textAlign: "center",
+    },
 
-  rowWrap: {
-    flexDirection: "row",
-    flexWrap: "wrap",
-    marginTop: 4,
-  },
-  chip: {
-    paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 999,
-    backgroundColor: "#1e1e1e",
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-    marginRight: 8,
-    marginBottom: 8,
-  },
-  chipSelected: {
-    backgroundColor: GREEN,
-    borderColor: GREEN,
-  },
-  chipText: { color: "#ddd", fontSize: 14 },
-  chipTextSelected: { color: "#fff", fontWeight: "700" },
+    rowWrap: {
+      flexDirection: "row",
+      flexWrap: "wrap",
+      marginTop: 4,
+      gap: 8,
+    },
+    chip: {
+      paddingVertical: 8,
+      paddingHorizontal: 12,
+      borderRadius: 999,
+      backgroundColor: isDark ? "#1e1e1e" : "#f4f4f4",
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    chipSelected: {
+      backgroundColor: colors.primary,
+      borderColor: colors.primary,
+    },
+    chipText: { color: colors.subtitle, fontSize: 14 },
+    chipTextSelected: { color: colors.text, fontWeight: "700" },
 
-  inlineRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 4,
-  },
-  inlineSuffix: { color: "#aaa", fontSize: 13 },
+    inlineRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 8,
+      marginTop: 4,
+    },
+    inlineSuffix: { color: colors.subtitle, fontSize: 13 },
 
-  divider: {
-    height: 1,
-    backgroundColor: "#242424",
-    marginVertical: 12,
-  },
+    divider: {
+      height: 1,
+      backgroundColor: colors.border,
+      marginVertical: 12,
+    },
 
-  reminderRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  reminderTitle: { color: "#fff", fontSize: 16, fontWeight: "700" },
-  hint: { color: "#8a8a8a", fontSize: 12, marginTop: 4 },
+    reminderRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      gap: 12,
+    },
+    reminderTitle: { color: colors.text, fontSize: 16, fontWeight: "700" },
+    hint: { color: colors.subtitle, fontSize: 12, marginTop: 4 },
 
-  paymentSummary: {
-    color: "#ddd",
-    fontSize: 14,
-    marginBottom: 8,
-  },
-  paymentBtn: {
-    marginTop: 8,
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: 10,
-    borderWidth: 1,
-    borderColor: GREEN,
-    backgroundColor: "#0a1a0d",
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  paymentBtnText: {
-    color: GREEN,
-    fontWeight: "700",
-    fontSize: 14,
-  },
-  paymentActionsRow: {
-    flexDirection: "row",
-    justifyContent: "flex-end",
-    gap: 10,
-    marginTop: 12,
-  },
-  paymentGhostBtn: {
-    paddingHorizontal: 12,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#2a2a2a",
-  },
-  paymentGhostText: {
-    color: "#ddd",
-    fontWeight: "600",
-    fontSize: 13,
-  },
-  paymentApplyBtn: {
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 8,
-    backgroundColor: GREEN,
-  },
-  paymentApplyText: {
-    color: "#071b0a",
-    fontWeight: "700",
-    fontSize: 13,
-  },
+    paymentSummary: {
+      color: colors.subtitle,
+      fontSize: 14,
+      marginBottom: 8,
+    },
+    paymentBtn: {
+      marginTop: 8,
+      paddingVertical: 10,
+      paddingHorizontal: 14,
+      borderRadius: 10,
+      borderWidth: 1,
+      borderColor: colors.primary,
+      backgroundColor: isDark ? "#0a1a0d" : "#e8f5e9",
+      alignItems: "center",
+      justifyContent: "center",
+    },
+    paymentBtnText: {
+      color: colors.primary,
+      fontWeight: "700",
+      fontSize: 14,
+    },
+    paymentActionsRow: {
+      flexDirection: "row",
+      justifyContent: "flex-end",
+      gap: 10,
+      marginTop: 12,
+    },
+    paymentGhostBtn: {
+      paddingHorizontal: 12,
+      paddingVertical: 8,
+      borderRadius: 8,
+      borderWidth: 1,
+      borderColor: colors.border,
+    },
+    paymentGhostText: {
+      color: colors.text,
+      fontWeight: "600",
+      fontSize: 13,
+    },
+    paymentApplyBtn: {
+      paddingHorizontal: 14,
+      paddingVertical: 8,
+      borderRadius: 8,
+      backgroundColor: colors.primary,
+    },
+    paymentApplyText: {
+      color: "#071b0a",
+      fontWeight: "700",
+      fontSize: 13,
+    },
 
-  saveBtn: {
-    backgroundColor: "#00C853",
-    paddingVertical: 14,
-    borderRadius: 12,
-    alignItems: "center",
-    justifyContent: "center",
-    borderWidth: 1,
-    borderColor: "#1b5e20",
-    marginTop: 4,
-  },
-  saveText: { color: "#071b0a", fontSize: 17, fontWeight: "800" },
-  pressed: {
-    opacity: 0.85,
-  },
-});
+    saveBtn: {
+      backgroundColor: colors.primary,
+      paddingVertical: 14,
+      borderRadius: 12,
+      alignItems: "center",
+      justifyContent: "center",
+      borderWidth: 1,
+      borderColor: colors.primary,
+      marginTop: 4,
+    },
+    saveText: { color: "#071b0a", fontSize: 17, fontWeight: "800" },
+    pressed: {
+      opacity: 0.85,
+    },
+  });

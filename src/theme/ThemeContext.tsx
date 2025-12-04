@@ -20,6 +20,9 @@ export type ThemeContextValue = {
   biometricsEnabled: boolean;
   setBiometricsEnabled: (value: boolean) => void;
 
+  notificationsEnabled: boolean;
+  setNotificationsEnabled: (value: boolean) => void;
+
   colors: ThemeColors;
 };
 
@@ -29,8 +32,11 @@ export const ThemeContext = React.createContext<ThemeContextValue>({
 
   setForceDark: () => {},
 
-  biometricsEnabled: false,
+  biometricsEnabled: true,
   setBiometricsEnabled: () => {},
+
+  notificationsEnabled: false,
+  setNotificationsEnabled: () => {},
 
   colors: {
     background: "#101010",
