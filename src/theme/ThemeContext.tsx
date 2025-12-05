@@ -15,10 +15,10 @@ export type ThemeContextValue = {
   isDark: boolean;
   forceDark: boolean;
 
-  setForceDark: (value: boolean) => void;
+  setForceDark: (value: boolean) => Promise<void>;
 
   biometricsEnabled: boolean;
-  setBiometricsEnabled: (value: boolean) => void;
+  setBiometricsEnabled: (value: boolean) => Promise<void>;
 
   notificationsEnabled: boolean;
   setNotificationsEnabled: (value: boolean) => void;
@@ -30,10 +30,10 @@ export const ThemeContext = React.createContext<ThemeContextValue>({
   isDark: true,
   forceDark: false,
 
-  setForceDark: () => {},
+  setForceDark: async () => {},
 
   biometricsEnabled: true,
-  setBiometricsEnabled: () => {},
+  setBiometricsEnabled: async () => {},
 
   notificationsEnabled: false,
   setNotificationsEnabled: () => {},

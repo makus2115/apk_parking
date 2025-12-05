@@ -56,46 +56,6 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ navigationTheme }) => (
       <Stack.Screen name="Map" component={MapWrapped} />
       <Stack.Screen name="Home" component={HomeScreen} />
       <Stack.Screen name="UserProfile" component={UserProfileWrapped} />
-      <Stack.Screen
-        name="Ekran1"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 1" }}
-      />
-      <Stack.Screen
-        name="Ekran2"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 2" }}
-      />
-      <Stack.Screen
-        name="Ekran3"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 3" }}
-      />
-      <Stack.Screen
-        name="Ekran4"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 4" }}
-      />
-      <Stack.Screen
-        name="Ekran5"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 5" }}
-      />
-      <Stack.Screen
-        name="Ekran6"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 6" }}
-      />
-      <Stack.Screen
-        name="Ekran7"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 7" }}
-      />
-      <Stack.Screen
-        name="Ekran8"
-        component={ScreenTemplateWrapped}
-        initialParams={{ title: "Ekran 8" }}
-      />
     </Stack.Navigator>
   </NavigationContainer>
 );

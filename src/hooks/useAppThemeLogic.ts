@@ -1,9 +1,12 @@
+import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
-import { useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useColorScheme } from "react-native";
 import { ThemeContextValue } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
+const FORCE_DARK_STORAGE_KEY = "@settings_force_dark";
+const BIOMETRICS_STORAGE_KEY = "@settings_biometrics_enabled";
 
 const LightNavTheme: Theme = {
   ...DefaultTheme,
@@ -31,10 +34,66 @@ const DarkNavTheme: Theme = {
 
 export const useAppThemeLogic = () => {
   const systemScheme = useColorScheme();
-  const [forceDark, setForceDark] = useState<boolean>(false);
-  const [biometricsEnabled, setBiometricsEnabled] = useState<boolean>(true);
+  const [forceDark, setForceDarkState] = useState<boolean>(false);
+  const [biometricsEnabled, setBiometricsEnabledState] =
+    useState<boolean>(true);
   const [notificationsEnabled, setNotificationsEnabled] =
     useState<boolean>(false);
+
+  useEffect(() => {
+    const loadForceDarkPreference = async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem(FORCE_DARK_STORAGE_KEY);
+        if (storedValue === null) return;
+
+        setForceDarkState(storedValue === "true");
+      } catch (e) {
+        console.warn("Nie udaˆo si© wczyta† ustawienia motywu", e);
+      }
+    };
+
+    void loadForceDarkPreference();
+  }, []);
+
+  useEffect(() => {
+    const loadBiometricsPreference = async () => {
+      try {
+        const storedValue = await AsyncStorage.getItem(BIOMETRICS_STORAGE_KEY);
+
+        if (storedValue === null) {
+          setBiometricsEnabledState(true);
+          return;
+        }
+
+        setBiometricsEnabledState(storedValue === "true");
+      } catch (e) {
+        console.warn("Nie udało się wczytać ustawienia biometrii", e);
+        setBiometricsEnabledState(true);
+      }
+    };
+
+    void loadBiometricsPreference();
+  }, []);
+
+  const setForceDark = useCallback(async (value: boolean) => {
+    setForceDarkState(value);
+
+    try {
+      await AsyncStorage.setItem(FORCE_DARK_STORAGE_KEY, JSON.stringify(value));
+    } catch (e) {
+      console.warn("Nie udaˆo si© zapisa† ustawienia motywu", e);
+    }
+  }, []);
+
+  const setBiometricsEnabled = useCallback(async (value: boolean) => {
+    setBiometricsEnabledState(value);
+
+    try {
+      await AsyncStorage.setItem(BIOMETRICS_STORAGE_KEY, JSON.stringify(value));
+    } catch (e) {
+      console.warn("Nie udało się zapisać ustawienia biometrii", e);
+    }
+  }, []);
 
   const isDark = forceDark || systemScheme === "dark";
 
@@ -65,7 +124,14 @@ export const useAppThemeLogic = () => {
             primary: GREEN,
           },
     }),
-    [isDark, forceDark, biometricsEnabled, notificationsEnabled]
+    [
+      isDark,
+      forceDark,
+      biometricsEnabled,
+      notificationsEnabled,
+      setForceDark,
+      setBiometricsEnabled,
+    ]
   );
 
   const navigationTheme = isDark ? DarkNavTheme : LightNavTheme;
