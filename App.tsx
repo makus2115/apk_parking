@@ -10,13 +10,12 @@ import { ThemeProvider } from "./src/theme/ThemeContext";
 const App: React.FC = () => {
   const { themeContextValue, navigationTheme } = useAppThemeLogic();
 
-
   return (
-    <ThemeProvider value={themeContextValue}>
-      <SafeAreaProvider>
+    <SafeAreaProvider>
+      <ThemeProvider value={themeContextValue}>
         <AppNavigator navigationTheme={navigationTheme} />
-      </SafeAreaProvider>
-    </ThemeProvider>
+      </ThemeProvider>
+    </SafeAreaProvider>
   );
 };
 

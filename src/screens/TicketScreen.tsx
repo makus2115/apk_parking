@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useMemo, useRef, useState } from "react";
 import {
   Alert,
   Pressable,
@@ -137,10 +137,13 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   const [selectedPlate, setSelectedPlate] = useState<string>(plates[0]);
   const [addingPlate, setAddingPlate] = useState<boolean>(false);
   const [newPlate, setNewPlate] = useState<string>("");
+  const [plateInputKey, setPlateInputKey] = useState<number>(0);
 
   const [zone, setZone] = useState<ZoneKey>("A");
   const [startNow, setStartNow] = useState<boolean>(true);
   const [startOffsetMin, setStartOffsetMin] = useState<string>("0");
+  const startOffsetRef = useRef<string>(startOffsetMin);
+  const newPlateRef = useRef<string>("");
   const [durationMin, setDurationMin] = useState<number>(60);
   const [notifyBeforeEnd, setNotifyBeforeEnd] = useState<boolean>(true);
   const [loading, setLoading] = useState<boolean>(false);
@@ -171,7 +174,10 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   );
 
   const now = new Date();
-  const startOffsetParsed = Number.parseInt(startOffsetMin || "0", 10);
+  const startOffsetParsed = Number.parseInt(
+    startOffsetRef.current || startOffsetMin || "0",
+    10
+  );
   const startTime = startNow
     ? now
     : addMinutes(now, Math.max(0, Math.min(720, startOffsetParsed)));
@@ -187,7 +193,7 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
   const canExtend = durationMin < 8 * 60;
 
   function addPlate(): void {
-    const p = newPlate.trim().toUpperCase();
+    const p = (newPlateRef.current || newPlate).trim().toUpperCase();
     if (!p) {
       Alert.alert("Tablica", "Wpisz numer rejestracyjny.");
       return;
@@ -198,7 +204,9 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
     }
     setPlates((prev) => [p, ...prev]);
     setSelectedPlate(p);
+    newPlateRef.current = "";
     setNewPlate("");
+    setPlateInputKey((k) => k + 1);
     setAddingPlate(false);
   }
 
@@ -291,12 +299,15 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
           {addingPlate ? (
             <View style={styles.addPlateRow}>
               <TextInput
+                key={plateInputKey}
                 style={[styles.input, { flex: 1 }]}
                 placeholder="Np. WX 12345"
                 placeholderTextColor={colors.subtitle}
                 autoCapitalize="characters"
-                value={newPlate}
-                onChangeText={setNewPlate}
+                defaultValue={newPlate}
+                onChangeText={(text) => {
+                  newPlateRef.current = text;
+                }}
               />
               <Pressable
                 style={({ pressed }) => [
@@ -376,8 +387,10 @@ const ParkingTicketScreen: React.FC<ParkingTicketScreenProps> = ({
                 style={[styles.input, styles.inputSmall]}
                 placeholder="min"
                 placeholderTextColor={colors.subtitle}
-                value={startOffsetMin}
-                onChangeText={(t) => setStartOffsetMin(t.replace(/[^\d]/g, ""))}
+                defaultValue={startOffsetMin}
+                onChangeText={(t) => {
+                  startOffsetRef.current = t.replace(/[^\d]/g, "");
+                }}
               />
               <Text style={styles.inlineSuffix}>min</Text>
             </View>
