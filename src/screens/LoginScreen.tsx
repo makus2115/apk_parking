@@ -11,29 +11,33 @@ import {
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
-import { RootStackParamList } from "../navigation/types";
+import { AuthStackParamList } from "../navigation/types";
+import { login } from "../services/authApi";
+import { saveSession } from "../services/authStorage";
 import { ThemeContext } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
 
-type LoginScreenNavigationProp = StackNavigationProp<
-  RootStackParamList,
-  "Login"
->;
+type LoginScreenNavigationProp = StackNavigationProp<AuthStackParamList, "Login">;
 
 interface LoginScreenProps {
   navigation: LoginScreenNavigationProp;
+  onLoginSuccess?: () => void;
 }
 
 interface ThemeContextValue {
   biometricsEnabled: boolean;
 }
 
-const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
+const LoginScreen: React.FC<LoginScreenProps> = ({
+  navigation,
+  onLoginSuccess,
+}) => {
   const [email, setEmail] = useState<string>("");
   const [password, setPassword] = useState<string>("");
   const { biometricsEnabled } = useContext(ThemeContext) as ThemeContextValue;
   const [canUseBiometrics, setCanUseBiometrics] = useState<boolean>(false);
+  const [loading, setLoading] = useState<boolean>(false);
 
   useEffect(() => {
     const checkBiometrics = async () => {
@@ -45,7 +49,7 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
         const hasHardware = await LocalAuthentication.hasHardwareAsync();
         const isEnrolled = await LocalAuthentication.isEnrolledAsync();
         setCanUseBiometrics(hasHardware && isEnrolled);
-      } catch (e) {
+      } catch {
         setCanUseBiometrics(false);
       }
     };
@@ -61,21 +65,36 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
       });
 
       if (result.success) {
-        navigation.replace("Home");
+        onLoginSuccess?.();
       } else {
         Alert.alert("Niepowodzenie", "Nie udało się potwierdzić tożsamości.");
       }
-    } catch (e) {
+    } catch {
       Alert.alert("Błąd", "Logowanie biometryczne jest niedostępne.");
     }
   };
 
-  const handleLogin = (): void => {
-    if (!email || !password) {
+  const handleLogin = async (): Promise<void> => {
+    const emailValue = email.trim();
+    if (!emailValue || !password) {
       Alert.alert("Błąd", "Proszę wprowadzić e-mail i hasło.");
       return;
     }
-    Alert.alert("Logowanie", `Zalogowano jako ${email}`);
+
+    setLoading(true);
+    try {
+      const response = await login(emailValue, password);
+
+      await saveSession(response.token, response.user);
+
+      Alert.alert("Logowanie", `Zalogowano jako ${response.user.email}`);
+      onLoginSuccess?.();
+    } catch (e) {
+      const message = e instanceof Error ? e.message : "Spróbuj ponownie.";
+      Alert.alert("Błąd logowania", message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -104,13 +123,13 @@ const LoginScreen: React.FC<LoginScreenProps> = ({ navigation }) => {
           />
 
           <Pressable
-            style={({ pressed }) => [
-              styles.button,
-              pressed && styles.pressed,
-            ]}
+            style={({ pressed }) => [styles.button, pressed && styles.pressed]}
             onPress={handleLogin}
+            disabled={loading}
           >
-            <Text style={styles.buttonText}>Zaloguj</Text>
+            <Text style={styles.buttonText}>
+              {loading ? "Logowanie..." : "Zaloguj"}
+            </Text>
           </Pressable>
 
           {canUseBiometrics && (

@@ -22,6 +22,8 @@ import {
 import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 
 import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
+import { ScreenWrapper } from "@/components";
+import { getSavedUser } from "../services/authStorage";
 
 const PROFILE_STORAGE_KEY = "@parking_user_profile" as const;
 
@@ -168,6 +170,9 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   useEffect(() => {
     (async () => {
       try {
+        const savedSession = await getSavedUser();
+        const savedEmail = savedSession?.email ?? "";
+
         const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
 
         if (stored) {
@@ -175,17 +180,15 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
 
           const merged: UserProfile = {
             ...defaultProfile,
-
             ...parsed,
+            email: parsed.email || savedEmail,
           };
 
           setProfile(merged);
 
           setPersonalDraft({
             fullName: merged.fullName ?? "",
-
             email: merged.email ?? "",
-
             phone: merged.phone ?? "",
           });
 
@@ -198,6 +201,9 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
           const initialDuration = String(defaultProfile.defaultDurationMin);
           setDefaultDurationInput(initialDuration);
           durationRef.current = initialDuration;
+
+          setProfile((p) => ({ ...p, email: savedEmail }));
+          setPersonalDraft((p) => ({ ...p, email: savedEmail }));
         }
       } catch (e) {
         console.warn("Nie udało się wczytać profilu użytkownika", e);
@@ -393,341 +399,343 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   }
 
   return (
-    <KeyboardAwareScrollView
-      style={styles.screen}
-      contentContainerStyle={[styles.container, { flexGrow: 1 }]}
-      keyboardDismissMode="none"
-      keyboardShouldPersistTaps="always"
-      enableOnAndroid
-      enableResetScrollToCoords={false}
-      extraScrollHeight={24}
-      keyboardOpeningTime={0}
-    >
-      <Text style={styles.heading}>Profil użytkownika</Text>
-
-      <Card style={styles.avatarCard}>
-        <View style={styles.avatarCircle}>
-          <Text style={styles.avatarInitials}>{initials}</Text>
-        </View>
-
-        <View style={{ flex: 1 }}>
-          <Text style={styles.avatarName}>
-            {profile.fullName || "Twoje imię i nazwisko"}
-          </Text>
-
-          <Text style={styles.avatarSubtitle}>
-            {profile.email
-              ? profile.email
-              : "Dodaj adres e-mail, aby otrzymywać potwierdzenia"}
-          </Text>
-        </View>
-      </Card>
-
-      <Card>
-        <View style={styles.cardHeaderRow}>
-          <Text style={styles.label}>Dane osobowe</Text>
-
-          <Pressable
-            onPress={toggleEditingPersonal}
-            style={({ pressed }) => [
-              styles.editToggleBtn,
-
-              pressed && styles.pressed,
-            ]}
-          >
-            <Text style={styles.editToggleText}>
-              {isEditingPersonal ? "Zakończ edycję" : "Edytuj dane"}
-            </Text>
-          </Pressable>
-        </View>
-
-        {!isEditingPersonal ? (
-          <>
-            <View style={styles.readonlyRow}>
-              <Text style={styles.readonlyLabel}>Imię i nazwisko</Text>
-
-              <Text style={styles.readonlyValue}>
-                {profile.fullName || "Nie podano"}
-              </Text>
-            </View>
-
-            <View style={styles.readonlyRow}>
-              <Text style={styles.readonlyLabel}>Adres e-mail</Text>
-
-              <Text style={styles.readonlyValue}>
-                {profile.email || "Nie podano"}
-              </Text>
-            </View>
-
-            <View style={styles.readonlyRow}>
-              <Text style={styles.readonlyLabel}>Telefon</Text>
-
-              <Text style={styles.readonlyValue}>
-                {profile.phone || "Nie podano"}
-              </Text>
-            </View>
-          </>
-        ) : (
-          <>
-            <Text style={styles.fieldLabel}>Imię i nazwisko</Text>
-
-            <TextInput
-              defaultValue={personalDraft.fullName}
-              style={styles.input}
-              placeholder="Np. Jan Kowalski"
-              placeholderTextColor={colors.subtitle}
-              onChangeText={(text) => {
-                fullNameRef.current = text;
-              }}
-            />
-
-            <Text style={styles.fieldLabel}>Adres e-mail</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="np. jan.kowalski@example.com"
-              placeholderTextColor={colors.subtitle}
-              keyboardType="email-address"
-              autoCapitalize="none"
-              defaultValue={personalDraft.email}
-              onChangeText={(text) => {
-                emailRef.current = text;
-              }}
-            />
-
-            <Text style={styles.fieldLabel}>Telefon</Text>
-
-            <TextInput
-              style={styles.input}
-              placeholder="np. 500 600 700"
-              placeholderTextColor={colors.subtitle}
-              keyboardType="phone-pad"
-              defaultValue={personalDraft.phone}
-              onChangeText={(text) => {
-                phoneRef.current = text;
-              }}
-            />
-          </>
-        )}
-      </Card>
-
-      <Card>
-        <Text style={styles.label}>Preferencje parkowania</Text>
-
-        <Text style={styles.fieldLabel}>Domyślna strefa parkowania</Text>
-
-        <View style={styles.rowWrap}>
-          {zoneKeys.map((z) => (
-            <Chip
-              key={z}
-              selected={profile.defaultZone === z}
-              onPress={() => handleSelectZone(z)}
-            >
-              {z} • {ZONES[z].name}
-            </Chip>
-          ))}
-        </View>
-
-        <Text style={styles.fieldLabel}>Domyślny czas biletu</Text>
-
-        <View style={styles.inlineRow}>
-          <TextInput
-            style={[styles.input, styles.inputSmall]}
-            placeholder="min"
-            placeholderTextColor={colors.subtitle}
-            keyboardType="number-pad"
-            defaultValue={defaultDurationInput}
-            onChangeText={(text) => {
-              durationRef.current = text.replace(/[^\d]/g, "");
-            }}
-          />
-
-          <Text style={styles.inlineSuffix}>min (15–480)</Text>
-        </View>
-
-        <View style={styles.divider} />
-
-        <View style={styles.reminderRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.reminderTitle}>
-              Przypomnij przed końcem biletu
-            </Text>
-
-            <Text style={styles.hint}>
-              Używane jako domyślna opcja na ekranie zakupu biletu.
-            </Text>
-          </View>
-
-          <Switch
-            value={profile.notifyBeforeEnd}
-            onValueChange={handleNotifyToggle}
-            thumbColor={
-              profile.notifyBeforeEnd ? colors.primary : colors.border
-            }
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-      </Card>
-
-      <Card>
-        <Text style={styles.label}>Płatności</Text>
-
-        {profile.paymentMethodLabel ? (
-          <Text style={styles.paymentSummary}>
-            Wybrany sposób płatności:{" "}
-            <Text style={{ fontWeight: "700" }}>
-              {profile.paymentMethodLabel}
-            </Text>
-          </Text>
-        ) : (
-          <Text style={styles.hint}>
-            Brak zapisanego sposobu płatności. Dodaj go, aby szybciej opłacać
-            bilety.
-          </Text>
-        )}
-
-        {!showPaymentForm && (
-          <Pressable
-            style={({ pressed }) => [
-              styles.paymentBtn,
-
-              pressed && styles.pressed,
-            ]}
-            onPress={() => setShowPaymentForm(true)}
-          >
-            <Text style={styles.paymentBtnText}>
-              Dodaj / zmień sposób płatności
-            </Text>
-          </Pressable>
-        )}
-
-        {showPaymentForm && (
-          <View style={{ marginTop: 12 }}>
-            <Text style={styles.fieldLabel}>Rodzaj płatności</Text>
-
-            <View style={styles.rowWrap}>
-              <Chip
-                selected={paymentType === "CARD"}
-                onPress={() => setPaymentType("CARD")}
-              >
-                Karta płatnicza
-              </Chip>
-
-              <Chip
-                selected={paymentType === "BLIK"}
-                onPress={() => setPaymentType("BLIK")}
-              >
-                BLIK
-              </Chip>
-            </View>
-
-            {paymentType === "CARD" ? (
-              <>
-                <Text style={styles.fieldLabel}>Ostatnie cyfry karty</Text>
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="np. 1234"
-                  placeholderTextColor={colors.subtitle}
-                  keyboardType="number-pad"
-                  maxLength={4}
-                  defaultValue={cardLast4}
-                  onChangeText={(t) => {
-                    cardLast4Ref.current = t.replace(/[^\d]/g, "");
-                  }}
-                />
-
-                <Text style={styles.hint}>
-                  Dla bezpieczeństwa zapisujemy tylko opis i ostatnie cyfry
-                  karty.
-                </Text>
-              </>
-            ) : (
-              <>
-                <Text style={styles.fieldLabel}>Opis / alias BLIK</Text>
-
-                <TextInput
-                  style={styles.input}
-                  placeholder="np. Mój BLIK"
-                  placeholderTextColor={colors.subtitle}
-                  defaultValue={blikAlias}
-                  onChangeText={(text) => {
-                    blikAliasRef.current = text;
-                  }}
-                />
-              </>
-            )}
-
-            <View style={styles.paymentActionsRow}>
-              <Pressable
-                style={({ pressed }) => [
-                  styles.paymentGhostBtn,
-
-                  pressed && styles.pressed,
-                ]}
-                onPress={() => {
-                  setShowPaymentForm(false);
-                }}
-              >
-                <Text style={styles.paymentGhostText}>Anuluj</Text>
-              </Pressable>
-
-              <Pressable
-                style={({ pressed }) => [
-                  styles.paymentApplyBtn,
-
-                  pressed && styles.pressed,
-                ]}
-                onPress={applyPaymentMethod}
-              >
-                <Text style={styles.paymentApplyText}>Zastosuj</Text>
-              </Pressable>
-            </View>
-          </View>
-        )}
-      </Card>
-
-      <Card>
-        <Text style={styles.label}>Komunikacja</Text>
-
-        <View style={styles.reminderRow}>
-          <View style={{ flex: 1 }}>
-            <Text style={styles.reminderTitle}>
-              Oferty i komunikacja marketingowa
-            </Text>
-
-            <Text style={styles.hint}>
-              Okazjonalne powiadomienia o nowych funkcjach i promocjach.
-            </Text>
-          </View>
-
-          <Switch
-            value={profile.allowMarketing}
-            onValueChange={handleMarketingToggle}
-            thumbColor={profile.allowMarketing ? colors.primary : colors.border}
-            trackColor={{ true: colors.primary, false: colors.border }}
-          />
-        </View>
-      </Card>
-
-      <Pressable
-        style={({ pressed }) => [
-          styles.saveBtn,
-
-          saving && { opacity: 0.7 },
-
-          pressed && styles.pressed,
-        ]}
-        onPress={handleSave}
-        disabled={saving}
+    <ScreenWrapper>
+      <KeyboardAwareScrollView
+        style={styles.screen}
+        contentContainerStyle={[styles.container, { flexGrow: 1 }]}
+        keyboardDismissMode="none"
+        keyboardShouldPersistTaps="always"
+        enableOnAndroid
+        enableResetScrollToCoords={false}
+        extraScrollHeight={24}
+        keyboardOpeningTime={0}
       >
-        <Text style={styles.saveText}>
-          {saving ? "Zapisywanie..." : "Zapisz zmiany"}
-        </Text>
-      </Pressable>
+        <Text style={styles.heading}>Profil użytkownika</Text>
 
-      <View style={{ height: 28 }} />
-    </KeyboardAwareScrollView>
+        <Card style={styles.avatarCard}>
+          <View style={styles.avatarCircle}>
+            <Text style={styles.avatarInitials}>{initials}</Text>
+          </View>
+
+          <View style={{ flex: 1 }}>
+            <Text style={styles.avatarName}>
+              {profile.fullName || "Twoje imię i nazwisko"}
+            </Text>
+
+            <Text style={styles.avatarSubtitle}>
+              {profile.email
+                ? profile.email
+                : "Dodaj adres e-mail, aby otrzymywać potwierdzenia"}
+            </Text>
+          </View>
+        </Card>
+
+        <Card>
+          <View style={styles.cardHeaderRow}>
+            <Text style={styles.label}>Dane osobowe</Text>
+
+            <Pressable
+              onPress={toggleEditingPersonal}
+              style={({ pressed }) => [
+                styles.editToggleBtn,
+
+                pressed && styles.pressed,
+              ]}
+            >
+              <Text style={styles.editToggleText}>
+                {isEditingPersonal ? "Zakończ edycję" : "Edytuj dane"}
+              </Text>
+            </Pressable>
+          </View>
+
+          {!isEditingPersonal ? (
+            <>
+              <View style={styles.readonlyRow}>
+                <Text style={styles.readonlyLabel}>Imię i nazwisko</Text>
+
+                <Text style={styles.readonlyValue}>
+                  {profile.fullName || "Nie podano"}
+                </Text>
+              </View>
+
+              <View style={styles.readonlyRow}>
+                <Text style={styles.readonlyLabel}>Adres e-mail</Text>
+
+                <Text style={styles.readonlyValue}>
+                  {profile.email || "Nie podano"}
+                </Text>
+              </View>
+
+              <View style={styles.readonlyRow}>
+                <Text style={styles.readonlyLabel}>Telefon</Text>
+
+                <Text style={styles.readonlyValue}>
+                  {profile.phone || "Nie podano"}
+                </Text>
+              </View>
+            </>
+          ) : (
+            <>
+              <Text style={styles.fieldLabel}>Imię i nazwisko</Text>
+
+              <TextInput
+                defaultValue={personalDraft.fullName}
+                style={styles.input}
+                placeholder="Np. Jan Kowalski"
+                placeholderTextColor={colors.subtitle}
+                onChangeText={(text) => {
+                  fullNameRef.current = text;
+                }}
+              />
+
+              <Text style={styles.fieldLabel}>Adres e-mail</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="np. jan.kowalski@example.com"
+                placeholderTextColor={colors.subtitle}
+                keyboardType="email-address"
+                autoCapitalize="none"
+                defaultValue={personalDraft.email}
+                onChangeText={(text) => {
+                  emailRef.current = text;
+                }}
+              />
+
+              <Text style={styles.fieldLabel}>Telefon</Text>
+
+              <TextInput
+                style={styles.input}
+                placeholder="np. 500 600 700"
+                placeholderTextColor={colors.subtitle}
+                keyboardType="phone-pad"
+                defaultValue={personalDraft.phone}
+                onChangeText={(text) => {
+                  phoneRef.current = text;
+                }}
+              />
+            </>
+          )}
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Preferencje parkowania</Text>
+
+          <Text style={styles.fieldLabel}>Domyślna strefa parkowania</Text>
+
+          <View style={styles.rowWrap}>
+            {zoneKeys.map((z) => (
+              <Chip
+                key={z}
+                selected={profile.defaultZone === z}
+                onPress={() => handleSelectZone(z)}
+              >
+                {z} • {ZONES[z].name}
+              </Chip>
+            ))}
+          </View>
+
+          <Text style={styles.fieldLabel}>Domyślny czas biletu</Text>
+
+          <View style={styles.inlineRow}>
+            <TextInput
+              style={[styles.input, styles.inputSmall]}
+              placeholder="min"
+              placeholderTextColor={colors.subtitle}
+              keyboardType="number-pad"
+              defaultValue={defaultDurationInput}
+              onChangeText={(text) => {
+                durationRef.current = text.replace(/[^\d]/g, "");
+              }}
+            />
+
+            <Text style={styles.inlineSuffix}>min (15–480)</Text>
+          </View>
+
+          <View style={styles.divider} />
+
+          <View style={styles.reminderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reminderTitle}>
+                Przypomnij przed końcem biletu
+              </Text>
+
+              <Text style={styles.hint}>
+                Używane jako domyślna opcja na ekranie zakupu biletu.
+              </Text>
+            </View>
+
+            <Switch
+              value={profile.notifyBeforeEnd}
+              onValueChange={handleNotifyToggle}
+              thumbColor={
+                profile.notifyBeforeEnd ? colors.primary : colors.border
+              }
+              trackColor={{ true: colors.primary, false: colors.border }}
+            />
+          </View>
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Płatności</Text>
+
+          {profile.paymentMethodLabel ? (
+            <Text style={styles.paymentSummary}>
+              Wybrany sposób płatności:{" "}
+              <Text style={{ fontWeight: "700" }}>
+                {profile.paymentMethodLabel}
+              </Text>
+            </Text>
+          ) : (
+            <Text style={styles.hint}>
+              Brak zapisanego sposobu płatności. Dodaj go, aby szybciej opłacać
+              bilety.
+            </Text>
+          )}
+
+          {!showPaymentForm && (
+            <Pressable
+              style={({ pressed }) => [
+                styles.paymentBtn,
+
+                pressed && styles.pressed,
+              ]}
+              onPress={() => setShowPaymentForm(true)}
+            >
+              <Text style={styles.paymentBtnText}>
+                Dodaj / zmień sposób płatności
+              </Text>
+            </Pressable>
+          )}
+
+          {showPaymentForm && (
+            <View style={{ marginTop: 12 }}>
+              <Text style={styles.fieldLabel}>Rodzaj płatności</Text>
+
+              <View style={styles.rowWrap}>
+                <Chip
+                  selected={paymentType === "CARD"}
+                  onPress={() => setPaymentType("CARD")}
+                >
+                  Karta płatnicza
+                </Chip>
+
+                <Chip
+                  selected={paymentType === "BLIK"}
+                  onPress={() => setPaymentType("BLIK")}
+                >
+                  BLIK
+                </Chip>
+              </View>
+
+              {paymentType === "CARD" ? (
+                <>
+                  <Text style={styles.fieldLabel}>Ostatnie cyfry karty</Text>
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="np. 1234"
+                    placeholderTextColor={colors.subtitle}
+                    keyboardType="number-pad"
+                    maxLength={4}
+                    defaultValue={cardLast4}
+                    onChangeText={(t) => {
+                      cardLast4Ref.current = t.replace(/[^\d]/g, "");
+                    }}
+                  />
+
+                  <Text style={styles.hint}>
+                    Dla bezpieczeństwa zapisujemy tylko opis i ostatnie cyfry
+                    karty.
+                  </Text>
+                </>
+              ) : (
+                <>
+                  <Text style={styles.fieldLabel}>Opis / alias BLIK</Text>
+
+                  <TextInput
+                    style={styles.input}
+                    placeholder="np. Mój BLIK"
+                    placeholderTextColor={colors.subtitle}
+                    defaultValue={blikAlias}
+                    onChangeText={(text) => {
+                      blikAliasRef.current = text;
+                    }}
+                  />
+                </>
+              )}
+
+              <View style={styles.paymentActionsRow}>
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.paymentGhostBtn,
+
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={() => {
+                    setShowPaymentForm(false);
+                  }}
+                >
+                  <Text style={styles.paymentGhostText}>Anuluj</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.paymentApplyBtn,
+
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={applyPaymentMethod}
+                >
+                  <Text style={styles.paymentApplyText}>Zastosuj</Text>
+                </Pressable>
+              </View>
+            </View>
+          )}
+        </Card>
+
+        <Card>
+          <Text style={styles.label}>Komunikacja</Text>
+
+          <View style={styles.reminderRow}>
+            <View style={{ flex: 1 }}>
+              <Text style={styles.reminderTitle}>
+                Oferty i komunikacja marketingowa
+              </Text>
+
+              <Text style={styles.hint}>
+                Okazjonalne powiadomienia o nowych funkcjach i promocjach.
+              </Text>
+            </View>
+
+            <Switch
+              value={profile.allowMarketing}
+              onValueChange={handleMarketingToggle}
+              thumbColor={profile.allowMarketing ? colors.primary : colors.border}
+              trackColor={{ true: colors.primary, false: colors.border }}
+            />
+          </View>
+        </Card>
+
+        <Pressable
+          style={({ pressed }) => [
+            styles.saveBtn,
+
+            saving && { opacity: 0.7 },
+
+            pressed && styles.pressed,
+          ]}
+          onPress={handleSave}
+          disabled={saving}
+        >
+          <Text style={styles.saveText}>
+            {saving ? "Zapisywanie..." : "Zapisz zmiany"}
+          </Text>
+        </Pressable>
+
+        <View style={{ height: 28 }} />
+      </KeyboardAwareScrollView>
+    </ScreenWrapper>
   );
 };
 

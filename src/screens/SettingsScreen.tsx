@@ -78,7 +78,7 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setForceDark(draftForceDark);
     setBiometricsEnabled(draftBiometricsEnabled);
     setNotificationsEnabled(draftNotificationsEnabled);
-    navigation.navigate("Home");
+    navigation.goBack();
   };
 
   return (
