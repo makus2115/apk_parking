@@ -17,9 +17,13 @@ const APP_VERSION = appConfig.expo?.version ?? "1.0.0";
 
 type SettingsScreenProps = {
   navigation: any;
+  onLogout?: () => void;
 };
 
-const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
+const SettingsScreen: React.FC<SettingsScreenProps> = ({
+  navigation,
+  onLogout,
+}) => {
   const {
     isDark,
     forceDark,
@@ -61,7 +65,9 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({ navigation }) => {
     setDraftBiometricsEnabled(value);
   const handleNotificationsToggle = (value: boolean) =>
     setDraftNotificationsEnabled(value);
-  const handleLogout = () => navigation.navigate("Start");
+  const handleLogout = () => {
+    onLogout?.();
+  };
   const handleCancel = () => {
     const {
       forceDark: initialForceDark,

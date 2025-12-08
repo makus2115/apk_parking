@@ -3,7 +3,7 @@ import { ActivityIndicator, View } from "react-native";
 import { NavigationContainer, Theme } from "@react-navigation/native";
 import AuthNavigator from "./AuthNavigator";
 import MainTabNavigator from "./MainTabNavigator";
-import { getSavedToken } from "../services/authStorage";
+import { clearSession, getSavedToken } from "../services/authStorage";
 
 type AppNavigatorProps = {
   navigationTheme: Theme;
@@ -33,6 +33,11 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ navigationTheme }) => {
     setIsAuthenticated(true);
   };
 
+  const handleLogout = async () => {
+    await clearSession();
+    setIsAuthenticated(false);
+  };
+
   if (checkingAuth) {
     return (
       <NavigationContainer theme={navigationTheme}>
@@ -46,7 +51,7 @@ const AppNavigator: React.FC<AppNavigatorProps> = ({ navigationTheme }) => {
   return (
     <NavigationContainer theme={navigationTheme}>
       {isAuthenticated ? (
-        <MainTabNavigator />
+        <MainTabNavigator onLogout={handleLogout} />
       ) : (
         <AuthNavigator onLoginSuccess={handleLoginSuccess} />
       )}

@@ -15,6 +15,10 @@ import { MainTabParamList } from "./types";
 
 const Tab = createBottomTabNavigator<MainTabParamList>();
 
+type MainTabNavigatorProps = {
+  onLogout?: () => void;
+};
+
 function getIconName(route: keyof MainTabParamList, focused: boolean): string {
   switch (route) {
     case "Home":
@@ -38,7 +42,7 @@ function getIconName(route: keyof MainTabParamList, focused: boolean): string {
   }
 }
 
-const MainTabNavigator: React.FC = () => (
+const MainTabNavigator: React.FC<MainTabNavigatorProps> = ({ onLogout }) => (
   <Tab.Navigator
     screenOptions={({ route }) => ({
       tabBarActiveTintColor: "#8BC34A",
@@ -61,7 +65,9 @@ const MainTabNavigator: React.FC = () => (
     <Tab.Screen name="Car" component={CarScreen} options={{ title: "Samochody" }} />
     <Tab.Screen name="Map" component={MapScreen} options={{ title: "Mapa" }} />
     <Tab.Screen name="UserProfile" component={UserProfileScreen} options={{ title: "Profil" }} />
-    <Tab.Screen name="Settings" component={SettingsScreen} options={{ title: "Ustawienia" }} />
+    <Tab.Screen name="Settings" options={{ title: "Ustawienia" }}>
+      {(props) => <SettingsScreen {...props} onLogout={onLogout} />}
+    </Tab.Screen>
 
     {/* Ukryte ekrany szablonowe – dostępne przez navigation.navigate */}
     <Tab.Screen
