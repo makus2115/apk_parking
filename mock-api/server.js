@@ -1,44 +1,57 @@
-const jsonServer = require("json-server");
 const path = require("path");
 const crypto = require("crypto");
 
-const server = jsonServer.create();
-const router = jsonServer.router(path.join(__dirname, "db.json"));
-const middlewares = jsonServer.defaults();
+async function start() {
+  // json-server 1.x jest modułem ESM bez domyślnego wejścia, więc korzystamy z konkretnych ścieżek.
+  const { createApp } = await import("json-server/lib/app.js");
+  const { Low } = await import("lowdb");
+  const { JSONFile } = await import("lowdb/node");
 
-const PORT = process.env.MOCK_API_PORT || 3001;
+  const PORT = process.env.MOCK_API_PORT || 3050;
+  const dbFile = path.join(__dirname, "db.json");
+  const adapter = new JSONFile(dbFile);
+  const db = new Low(adapter, { users: [], sessions: [] });
 
-server.use(jsonServer.bodyParser);
-server.use(middlewares);
+  await db.read();
+  db.data ||= { users: [], sessions: [] };
 
-server.post("/login", (req, res) => {
-  const { email, password } = req.body || {};
-  if (!email || !password) {
-    return res.status(400).json({ message: "Email i hasło są wymagane" });
-  }
+  const app = createApp(db, { logger: false });
 
-  const users = router.db.get("users").value();
-  const user = users.find(
-    (u) => u.email?.toLowerCase() === String(email).toLowerCase() && u.password === password
-  );
+  app.post("/login", (req, res) => {
+    const { email, password } = req.body || {};
+    if (!email || !password) {
+      return res.status(400).json({ message: "Email i haslo sa wymagane" });
+    }
 
-  if (!user) {
-    return res.status(401).json({ message: "Nieprawidłowe dane logowania" });
-  }
+    const users = db.data?.users || [];
+    const user = users.find(
+      (u) =>
+        u.email?.toLowerCase() === String(email).toLowerCase() &&
+        u.password === password
+    );
 
-  const token = crypto.randomBytes(16).toString("hex");
-  const session = { token, userId: user.id, createdAt: Date.now() };
+    if (!user) {
+      return res.status(401).json({ message: "Nieprawidlowe dane logowania" });
+    }
 
-  router.db.get("sessions").push(session).write();
+    const token = crypto.randomBytes(16).toString("hex");
+    const session = { token, userId: user.id, createdAt: Date.now() };
 
-  return res.json({
-    token,
-    user: { id: user.id, email: user.email, name: user.name },
+    db.data.sessions = [session, ...(db.data.sessions || [])];
+    void db.write();
+
+    return res.json({
+      token,
+      user: { id: user.id, email: user.email, name: user.name },
+    });
   });
-});
 
-server.use(router);
+  app.listen(PORT, () => {
+    console.log(`Mock API (json-server) slucha na http://localhost:${PORT}`);
+  });
+}
 
-server.listen(PORT, () => {
-  console.log(`Mock API (json-server) słucha na http://localhost:${PORT}`);
+start().catch((err) => {
+  console.error("Mock API failed to start:", err);
+  process.exit(1);
 });
