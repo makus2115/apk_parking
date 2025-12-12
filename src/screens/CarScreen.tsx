@@ -1,5 +1,8 @@
-import React, { useContext, useMemo, useState } from "react";
+import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  ActivityIndicator,
+  Animated,
+  Easing,
   Image,
   Pressable,
   ScrollView,
@@ -8,8 +11,34 @@ import {
   TextInput,
   View,
 } from "react-native";
+import { LinearGradient } from "expo-linear-gradient";
+import * as ImagePicker from "expo-image-picker";
 import { ScreenWrapper } from "../components";
 import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
+
+const PLATE_RECOGNIZER_API_KEY = process.env.EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY;
+const SCAN_COLOR = "#a855f7";
+
+async function recognizePlate(base64Image: string, apiKey: string) {
+  const formData = new FormData();
+  formData.append("upload", {
+    uri: `data:image/jpeg;base64,${base64Image}`,
+    name: "car.jpg",
+    type: "image/jpeg",
+  } as any);
+
+  const res = await fetch("https://api.platerecognizer.com/v1/plate-reader/", {
+    method: "POST",
+    headers: {
+      Authorization: `Token ${apiKey}`,
+    },
+    body: formData,
+  });
+
+  const data = await res.json();
+  const plate = data.results?.[0]?.plate;
+  return plate as string | undefined;
+}
 
 type Car = {
   id: string;
@@ -20,17 +49,17 @@ type Car = {
 const initialCars: Car[] = [
   {
     id: "1",
-    plate: "WX 12345",
+    plate: "WX12345",
     image: require("../../assets/cars/car1.png"),
   },
   {
     id: "2",
-    plate: "PO 9ABC1",
+    plate: "PO9ABC1",
     image: require("../../assets/cars/car2.png"),
   },
   {
     id: "3",
-    plate: "KR 7J202",
+    plate: "KR7J202",
     image: require("../../assets/cars/car3.png"),
   },
 ];
@@ -44,27 +73,175 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
   const [selectedId, setSelectedId] = useState<string>(initialCars[0]?.id ?? "");
   const [isAdding, setIsAdding] = useState(false);
   const [newPlate, setNewPlate] = useState("");
+  const [isScanning, setIsScanning] = useState(false);
+  const [scanMessage, setScanMessage] = useState<string | null>(null);
+  const [pendingPhotoUri, setPendingPhotoUri] = useState<string | undefined>();
   const { colors, isDark } = useContext(ThemeContext);
   const styles = useMemo(() => createStyles(colors, isDark), [colors, isDark]);
+  const badgePulse = useRef(new Animated.Value(0));
+
+  useEffect(() => {
+    const pulse = Animated.loop(
+      Animated.sequence([
+        Animated.timing(badgePulse.current, {
+          toValue: 1,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+        Animated.timing(badgePulse.current, {
+          toValue: 0,
+          duration: 900,
+          easing: Easing.inOut(Easing.ease),
+          useNativeDriver: true,
+        }),
+      ])
+    );
+
+    pulse.start();
+    return () => pulse.stop();
+  }, []);
+
+  const badgePulseStyle = {
+    transform: [
+      {
+        scale: badgePulse.current.interpolate({
+          inputRange: [0, 1],
+          outputRange: [1, 1.12],
+        }),
+      },
+    ],
+    opacity: badgePulse.current.interpolate({
+      inputRange: [0, 1],
+      outputRange: [0.85, 1],
+    }),
+  };
 
   const selectedCar = cars.find((c) => c.id === selectedId);
 
   const handleAddPlate = () => {
-    const plate = newPlate.trim();
+    const plate = newPlate.trim().toUpperCase();
     if (!plate) return;
 
     const newCar: Car = {
       id: Date.now().toString(),
       plate,
+      image: pendingPhotoUri ? { uri: pendingPhotoUri } : undefined,
     };
 
     setCars((prev) => [...prev, newCar]);
     setSelectedId(newCar.id);
     setNewPlate("");
     setIsAdding(false);
+    setPendingPhotoUri(undefined);
+    setScanMessage(null);
   };
 
-  const handleEdit = () => {};
+  const handleScanPlate = async () => {
+    setScanMessage(null);
+
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setScanMessage("Brak dostepu do aparatu.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      base64: true,
+      quality: 0.7,
+    });
+
+    if (result.canceled || !result.assets?.length) {
+      setScanMessage("Anulowano wykonanie zdjecia.");
+      return;
+    }
+
+    const asset = result.assets[0];
+    if (!asset.base64) {
+      setScanMessage("Nie udalo sie pobrac danych zdjecia.");
+      return;
+    }
+
+    if (!PLATE_RECOGNIZER_API_KEY) {
+      setScanMessage("Ustaw EXPO_PUBLIC_PLATE_RECOGNIZER_API_KEY w pliku .env.");
+      return;
+    }
+
+    setIsScanning(true);
+    try {
+      const plate = await recognizePlate(asset.base64, PLATE_RECOGNIZER_API_KEY);
+      if (plate) {
+        const normalizedPlate = plate.toUpperCase();
+        setNewPlate(normalizedPlate);
+        setIsAdding(true);
+        setPendingPhotoUri(asset.uri);
+        setScanMessage(`Odczytano tablice: ${normalizedPlate}`);
+      } else {
+        setScanMessage("Nie udalo sie odczytac tablicy.");
+      }
+    } catch (error) {
+      setScanMessage("Wystapil blad podczas wysylania zdjecia.");
+    } finally {
+      setIsScanning(false);
+    }
+  };
+
+  const handleAddPhoto = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setScanMessage("Brak dostepu do aparatu.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.length || !selectedCar) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setCars((prev) =>
+      prev.map((car) =>
+        car.id === selectedCar.id ? { ...car, image: { uri: asset.uri } } : car
+      )
+    );
+  };
+
+  const handleEdit = async () => {
+    const permission = await ImagePicker.requestCameraPermissionsAsync();
+    if (!permission.granted) {
+      setScanMessage("Brak dostepu do aparatu.");
+      return;
+    }
+
+    const result = await ImagePicker.launchCameraAsync({
+      quality: 0.8,
+    });
+
+    if (result.canceled || !result.assets?.length || !selectedCar) {
+      return;
+    }
+
+    const asset = result.assets[0];
+    setCars((prev) =>
+      prev.map((car) =>
+        car.id === selectedCar.id ? { ...car, image: { uri: asset.uri } } : car
+      )
+    );
+  };
+
+  const handleDelete = () => {
+    if (!selectedCar) return;
+
+    setCars((prev) => {
+      const updated = prev.filter((car) => car.id !== selectedCar.id);
+      const nextId = updated[0]?.id ?? "";
+      setSelectedId(nextId);
+      return updated;
+    });
+  };
 
   return (
     <ScreenWrapper>
@@ -109,6 +286,41 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
             </Pressable>
           </ScrollView>
 
+          <View style={styles.scanRow}>
+            <Pressable
+              style={({ pressed }) => [
+                styles.scanButton,
+                pressed && styles.pressed,
+                isScanning && styles.scanButtonDisabled,
+              ]}
+              disabled={isScanning}
+              onPress={handleScanPlate}
+            >
+              <Text style={styles.scanButtonText}>Wykryj tablice</Text>
+              <Animated.View style={[styles.aiBadgeAnimated, badgePulseStyle]}>
+                <LinearGradient
+                  colors={["#d946ef", "#6366f1"]}
+                  start={{ x: 0, y: 0 }}
+                  end={{ x: 1, y: 1 }}
+                  style={styles.aiBadge}
+                >
+                  <Text style={styles.aiBadgeText}>AI</Text>
+                </LinearGradient>
+              </Animated.View>
+            </Pressable>
+
+            {isScanning && (
+              <View style={styles.scanStatus}>
+                <ActivityIndicator size="small" color={SCAN_COLOR} />
+                <Text style={styles.scanStatusText}>Odczytywanie tablicy...</Text>
+              </View>
+            )}
+
+            {!isScanning && scanMessage && (
+              <Text style={styles.scanStatusText}>{scanMessage}</Text>
+            )}
+          </View>
+
           {isAdding && (
             <View style={styles.addPlateForm}>
               <TextInput
@@ -149,7 +361,7 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
                         styles.addPhotoButton,
                         pressed && styles.pressed,
                       ]}
-                      onPress={() => {}}
+                      onPress={handleAddPhoto}
                     >
                       <Text style={styles.addPhotoText}>Dodaj zdjęcie</Text>
                     </Pressable>
@@ -166,6 +378,16 @@ const CarsScreen: React.FC<CarsScreenProps> = () => {
                   onPress={handleEdit}
                 >
                   <Text style={styles.editButtonText}>Edytuj</Text>
+                </Pressable>
+
+                <Pressable
+                  style={({ pressed }) => [
+                    styles.deleteButton,
+                    pressed && styles.pressed,
+                  ]}
+                  onPress={handleDelete}
+                >
+                  <Text style={styles.deleteButtonText}>Usun</Text>
                 </Pressable>
               </View>
             </>
@@ -249,6 +471,66 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       fontWeight: "700",
       lineHeight: 26,
     },
+    scanRow: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginTop: 12,
+      flexWrap: "wrap",
+    },
+    scanButton: {
+      paddingHorizontal: 16,
+      paddingVertical: 10,
+      borderRadius: 12,
+      borderWidth: 1,
+      borderColor: SCAN_COLOR,
+      backgroundColor: isDark ? "#252525" : "#f2f2f2",
+      flexDirection: "row",
+      alignItems: "center",
+    },
+    scanButtonDisabled: {
+      opacity: 0.6,
+    },
+    scanButtonText: {
+      color: SCAN_COLOR,
+      fontSize: 15,
+      fontWeight: "700",
+    },
+    aiBadgeAnimated: {
+      marginLeft: 6,
+      position: "relative",
+      top: -2,
+    },
+    aiBadge: {
+      paddingHorizontal: 6,
+      paddingVertical: 2,
+      borderRadius: 6,
+      borderWidth: 1,
+      borderColor: "rgba(255,255,255,0.2)",
+      shadowColor: "#d946ef",
+      shadowOffset: { width: 0, height: 0 },
+      shadowOpacity: 0.95,
+      shadowRadius: 22,
+      elevation: 16,
+    },
+    aiBadgeText: {
+      color: "#ffffff",
+      fontSize: 11,
+      fontWeight: "700",
+      letterSpacing: 0.3,
+      textShadowColor: "#ffffff",
+      textShadowOffset: { width: 0, height: 0 },
+      textShadowRadius: 6,
+    },
+    scanStatus: {
+      flexDirection: "row",
+      alignItems: "center",
+      marginLeft: 10,
+    },
+    scanStatusText: {
+      color: colors.subtitle,
+      fontSize: 13,
+      marginLeft: 8,
+    },
 
     addPlateForm: {
       flexDirection: "row",
@@ -319,6 +601,8 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
     editWrapper: {
       marginTop: 16,
       alignItems: "center",
+      flexDirection: "row",
+      justifyContent: "center",
     },
     editButton: {
       paddingHorizontal: 20,
@@ -332,6 +616,20 @@ const createStyles = (colors: ThemeColors, isDark: boolean) =>
       color: colors.primary,
       fontSize: 15,
       fontWeight: "600",
+    },
+    deleteButton: {
+      paddingHorizontal: 18,
+      paddingVertical: 10,
+      borderRadius: 20,
+      borderWidth: 1,
+      borderColor: "#d32f2f",
+      backgroundColor: isDark ? "#2a1c1c" : "#fdeaea",
+      marginLeft: 10,
+    },
+    deleteButtonText: {
+      color: "#d32f2f",
+      fontSize: 15,
+      fontWeight: "700",
     },
 
     noCarText: {
