@@ -1,0 +1,24 @@
+{
+  "users": [
+    {
+      "id": "1",
+      "email": "demo@parking.app",
+      "password": "demo123",
+      "name": "Demo User"
+    },
+    {
+      "id": "2",
+      "email": "user@parking.app",
+      "password": "haslo123",
+      "name": "Jan Kowalski"
+    }
+  ],
+  "sessions": [
+    {
+      "id": "2e51",
+      "userId": "1",
+      "token": "session-1-1767712693702",
+      "createdAt": "2026-01-06T15:18:13.702Z"
+    }
+  ]
+}

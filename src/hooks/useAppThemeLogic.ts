@@ -1,7 +1,6 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { DarkTheme, DefaultTheme, Theme } from "@react-navigation/native";
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { useColorScheme } from "react-native";
 import { ThemeContextValue } from "../theme/ThemeContext";
 
 const GREEN = "#8BC34A";
@@ -33,7 +32,6 @@ const DarkNavTheme: Theme = {
 };
 
 export const useAppThemeLogic = () => {
-  const systemScheme = useColorScheme();
   const [forceDark, setForceDarkState] = useState<boolean>(false);
   const [biometricsEnabled, setBiometricsEnabledState] =
     useState<boolean>(true);
@@ -95,7 +93,7 @@ export const useAppThemeLogic = () => {
     }
   }, []);
 
-  const isDark = forceDark || systemScheme === "dark";
+  const isDark = forceDark;
 
   const themeContextValue = useMemo<ThemeContextValue>(
     () => ({

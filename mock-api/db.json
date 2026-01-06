@@ -1,7 +1,0 @@
-{
-  "users": [
-    { "id": 1, "email": "demo@parking.app", "password": "demo123", "name": "Demo User" },
-    { "id": 2, "email": "user@parking.app", "password": "haslo123", "name": "Jan Kowalski" }
-  ],
-  "sessions": []
-}
