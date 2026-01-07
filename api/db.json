@@ -11,6 +11,12 @@
       "email": "user@parking.app",
       "password": "haslo123",
       "name": "Jan Kowalski"
+    },
+    {
+      "id": "0c6a",
+      "name": "test",
+      "email": "test@parking.app",
+      "password": "haslo123"
     }
   ],
   "sessions": [
@@ -19,6 +25,18 @@
       "userId": "1",
       "token": "session-1-1767712693702",
       "createdAt": "2026-01-06T15:18:13.702Z"
+    },
+    {
+      "id": "603d",
+      "userId": "1",
+      "token": "session-1-1767785917517",
+      "createdAt": "2026-01-07T11:38:37.517Z"
+    },
+    {
+      "id": "3d76",
+      "userId": "0c6a",
+      "token": "session-0c6a-1767786012192",
+      "createdAt": "2026-01-07T11:40:12.192Z"
     }
   ]
 }

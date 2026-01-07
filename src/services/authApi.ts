@@ -19,6 +19,14 @@ export type LoginResponse = {
   };
 };
 
+export type RegisterResponse = {
+  user: {
+    id: number;
+    email: string;
+    name: string;
+  };
+};
+
 async function handle<T>(res: Response): Promise<T> {
   if (!res.ok) {
     const body = await res.text().catch(() => "");
@@ -35,6 +43,26 @@ async function findUserByCredentials(
   const res = await fetch(`${API_URL}/users?${query}`);
   const users = await handle<DbUser[]>(res);
   return users[0] ?? null;
+}
+
+async function findUserByEmail(email: string): Promise<DbUser | null> {
+  const query = `email=${encodeURIComponent(email)}`;
+  const res = await fetch(`${API_URL}/users?${query}`);
+  const users = await handle<DbUser[]>(res);
+  return users[0] ?? null;
+}
+
+async function createUser(payload: {
+  name: string;
+  email: string;
+  password: string;
+}): Promise<DbUser> {
+  const res = await fetch(`${API_URL}/users`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+  return handle<DbUser>(res);
 }
 
 async function createSession(userId: number, token: string): Promise<void> {
@@ -61,6 +89,26 @@ export async function login(email: string, password: string): Promise<LoginRespo
 
   return {
     token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+    },
+  };
+}
+
+export async function register(
+  name: string,
+  email: string,
+  password: string
+): Promise<RegisterResponse> {
+  const existing = await findUserByEmail(email);
+  if (existing) {
+    throw new Error("Uzytkownik z tym e-mailem juz istnieje.");
+  }
+
+  const user = await createUser({ name, email, password });
+  return {
     user: {
       id: user.id,
       email: user.email,

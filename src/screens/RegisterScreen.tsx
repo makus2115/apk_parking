@@ -8,6 +8,7 @@ import {
   View,
 } from "react-native";
 import { ScreenWrapper } from "../components";
+import { register } from "../services/authApi";
 
 type RegisterScreenProps = {
   navigation: any;
@@ -63,7 +64,9 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
     }
     try {
       setLoading(true);
-      await new Promise((r) => setTimeout(r, 800));
+      const nameValue = name.trim();
+      const emailValue = email.trim();
+      await register(nameValue, emailValue, password);
       Alert.alert("Sukces", "Konto utworzone! Możesz się zalogować.", [
         {
           text: "OK",
@@ -73,6 +76,10 @@ const RegisterScreen: React.FC<RegisterScreenProps> = ({ navigation }) => {
         },
       ]);
     } catch (e) {
+      if (e instanceof Error) {
+        Alert.alert("Blad", e.message);
+        return;
+      }
       Alert.alert("Błąd", "Coś poszło nie tak. Spróbuj ponownie.");
     } finally {
       setLoading(false);
