@@ -4,19 +4,40 @@
       "id": "1",
       "email": "demo@parking.app",
       "password": "demo123",
-      "name": "Demo User"
+      "name": "Demo User",
+      "fullName": "Demo User",
+      "phone": "600100100",
+      "defaultZone": "B",
+      "defaultDurationMin": 60,
+      "notifyBeforeEnd": true,
+      "allowMarketing": true,
+      "paymentMethodLabel": "BLIK - Sss"
     },
     {
       "id": "2",
       "email": "user@parking.app",
       "password": "haslo123",
-      "name": "Jan Kowalski"
+      "name": "Jan Kowalski",
+      "fullName": "Jan Kowalski",
+      "phone": "600100100",
+      "defaultZone": "C",
+      "defaultDurationMin": 60,
+      "notifyBeforeEnd": true,
+      "allowMarketing": true,
+      "paymentMethodLabel": "Karta **** 1234"
     },
     {
       "id": "0c6a",
       "name": "test",
       "email": "test@parking.app",
-      "password": "haslo123"
+      "password": "haslo123",
+      "fullName": "test",
+      "phone": "600100100",
+      "defaultZone": "A",
+      "defaultDurationMin": 60,
+      "notifyBeforeEnd": true,
+      "allowMarketing": false,
+      "paymentMethodLabel": ""
     }
   ],
   "sessions": [
@@ -37,6 +58,24 @@
       "userId": "0c6a",
       "token": "session-0c6a-1767786012192",
       "createdAt": "2026-01-07T11:40:12.192Z"
+    },
+    {
+      "id": "50e2",
+      "userId": "0c6a",
+      "token": "session-0c6a-1767951807868",
+      "createdAt": "2026-01-09T09:43:27.869Z"
+    },
+    {
+      "id": "40ca",
+      "userId": "1",
+      "token": "session-1-1767951867478",
+      "createdAt": "2026-01-09T09:44:27.478Z"
+    },
+    {
+      "id": "89db",
+      "userId": "2",
+      "token": "session-2-1767951924481",
+      "createdAt": "2026-01-09T09:45:24.481Z"
     }
   ]
 }

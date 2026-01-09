@@ -1,5 +1,3 @@
-import AsyncStorage from "@react-native-async-storage/async-storage";
-
 import React, {
   useCallback,
   useContext,
@@ -24,8 +22,13 @@ import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view
 import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 import { ScreenWrapper } from "@/components";
 import { getSavedUser } from "../services/authStorage";
-
-const PROFILE_STORAGE_KEY = "@parking_user_profile" as const;
+import {
+  defaultUserProfile as defaultProfile,
+  fetchUserProfile,
+  updateUserProfile,
+  type UserProfile,
+  type ZoneKey,
+} from "../services/userProfileApi";
 
 const ZONES = {
   A: { name: "Strefa A (centrum)", ratePerHour: 6.0 },
@@ -35,50 +38,12 @@ const ZONES = {
   C: { name: "Strefa C", ratePerHour: 3.0 },
 } as const;
 
-type ZoneKey = keyof typeof ZONES;
-
 type PaymentType = "CARD" | "BLIK";
-
-type UserProfile = {
-  fullName: string;
-
-  email: string;
-
-  phone: string;
-
-  defaultZone: ZoneKey;
-
-  defaultDurationMin: number;
-
-  notifyBeforeEnd: boolean;
-
-  allowMarketing: boolean;
-
-  paymentMethodLabel?: string;
-};
 
 type UserProfileScreenProps = {
   navigation?: {
     goBack?: () => void;
   };
-};
-
-const defaultProfile: UserProfile = {
-  fullName: "",
-
-  email: "",
-
-  phone: "",
-
-  defaultZone: "A",
-
-  defaultDurationMin: 60,
-
-  notifyBeforeEnd: true,
-
-  allowMarketing: false,
-
-  paymentMethodLabel: "",
 };
 
 type ChipProps = {
@@ -124,11 +89,13 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const [profile, setProfile] = useState<UserProfile>(defaultProfile);
 
   const [defaultDurationInput, setDefaultDurationInput] =
-    useState<string>("60");
+    useState<string>(String(defaultProfile.defaultDurationMin));
 
   const [loading, setLoading] = useState<boolean>(true);
 
   const [saving, setSaving] = useState<boolean>(false);
+
+  const userIdRef = useRef<number | string | null>(null);
 
   const fullNameRef = useRef<string>("");
 
@@ -168,49 +135,62 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   const [blikAlias, setBlikAlias] = useState<string>("");
 
   useEffect(() => {
+    let active = true;
+
+    const applyProfile = (nextProfile: UserProfile): void => {
+      if (!active) return;
+
+      setProfile(nextProfile);
+
+      setPersonalDraft({
+        fullName: nextProfile.fullName ?? "",
+        email: nextProfile.email ?? "",
+        phone: nextProfile.phone ?? "",
+      });
+
+      const loadedDuration = String(
+        nextProfile.defaultDurationMin ?? defaultProfile.defaultDurationMin
+      );
+      setDefaultDurationInput(loadedDuration);
+      durationRef.current = loadedDuration;
+    };
+
     (async () => {
+      const savedSession = await getSavedUser();
+      const savedEmail = savedSession?.email ?? "";
+      const savedFullName = savedSession?.name ?? "";
+
+      userIdRef.current = savedSession?.id ?? null;
+
+      const fallbackProfile: UserProfile = {
+        ...defaultProfile,
+        email: savedEmail,
+        fullName: savedFullName,
+      };
+
       try {
-        const savedSession = await getSavedUser();
-        const savedEmail = savedSession?.email ?? "";
-
-        const stored = await AsyncStorage.getItem(PROFILE_STORAGE_KEY);
-
-        if (stored) {
-          const parsed = JSON.parse(stored) as Partial<UserProfile>;
-
-          const merged: UserProfile = {
-            ...defaultProfile,
-            ...parsed,
-            email: parsed.email || savedEmail,
-          };
-
-          setProfile(merged);
-
-          setPersonalDraft({
-            fullName: merged.fullName ?? "",
-            email: merged.email ?? "",
-            phone: merged.phone ?? "",
-          });
-
-          const loadedDuration = String(
-            merged.defaultDurationMin ?? defaultProfile.defaultDurationMin
-          );
-          setDefaultDurationInput(loadedDuration);
-          durationRef.current = loadedDuration;
-        } else {
-          const initialDuration = String(defaultProfile.defaultDurationMin);
-          setDefaultDurationInput(initialDuration);
-          durationRef.current = initialDuration;
-
-          setProfile((p) => ({ ...p, email: savedEmail }));
-          setPersonalDraft((p) => ({ ...p, email: savedEmail }));
+        if (savedSession?.id == null) {
+          applyProfile(fallbackProfile);
+          return;
         }
+
+        const remoteProfile = await fetchUserProfile(savedSession.id, {
+          email: savedEmail,
+          fullName: savedFullName,
+        });
+
+        applyProfile(remoteProfile);
       } catch (e) {
+        applyProfile(fallbackProfile);
         console.warn("Nie udało się wczytać profilu użytkownika", e);
       } finally {
-        setLoading(false);
+        if (active) setLoading(false);
       }
     })();
+
+    return () => {
+      active = false;
+    };
   }, []);
 
   useEffect(() => {
@@ -298,6 +278,12 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
   }, [profile.fullName]);
 
   async function handleSave(): Promise<void> {
+    const userId = userIdRef.current;
+    if (userId == null) {
+      Alert.alert("Blad", "Brak zalogowanego uzytkownika.");
+      return;
+    }
+
     setSaving(true);
 
     try {
@@ -326,13 +312,17 @@ const UserProfileScreen: React.FC<UserProfileScreenProps> = ({
         defaultDurationMin: clamped,
       };
 
-      await AsyncStorage.setItem(PROFILE_STORAGE_KEY, JSON.stringify(toSave));
+      const updated = await updateUserProfile(userId, toSave);
 
-      setProfile(toSave);
+      setProfile(updated);
 
-      setPersonalDraft(nextPersonal);
+      setPersonalDraft({
+        fullName: updated.fullName,
+        email: updated.email,
+        phone: updated.phone,
+      });
 
-      setDefaultDurationInput(String(clamped));
+      setDefaultDurationInput(String(updated.defaultDurationMin));
 
       setIsEditingPersonal(false);
 
