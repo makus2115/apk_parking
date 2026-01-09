@@ -1,5 +1,6 @@
 import React, { useContext, useEffect, useMemo, useRef, useState } from "react";
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Switch,
@@ -7,6 +8,7 @@ import {
   Pressable,
   View,
 } from "react-native";
+import * as Notifications from "expo-notifications";
 import appConfig from "../../app.json";
 import { ScreenWrapper } from "../components";
 import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
@@ -14,6 +16,41 @@ import { ThemeColors, ThemeContext } from "../theme/ThemeContext";
 const GREEN = "#8BC34A";
 const LOGOUT_COLOR = "#c53b3bff";
 const APP_VERSION = appConfig.expo?.version ?? "1.0.0";
+const NOTIFICATION_CHANNEL_ID = "default";
+
+const ensureNotificationChannelAsync = async () => {
+  if (Platform.OS !== "android") return;
+
+  await Notifications.setNotificationChannelAsync(NOTIFICATION_CHANNEL_ID, {
+    name: "Default",
+    importance: Notifications.AndroidImportance.DEFAULT,
+  });
+};
+
+const requestNotificationPermissionsAsync = async () => {
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status === "granted") return true;
+
+  const { status: requestStatus } =
+    await Notifications.requestPermissionsAsync();
+
+  return requestStatus === "granted";
+};
+
+const notifyNotificationsEnabledAsync = async () => {
+  const permissionGranted = await requestNotificationPermissionsAsync();
+  if (!permissionGranted) return;
+
+  await ensureNotificationChannelAsync();
+
+  await Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Powiadomienia",
+      body: "wlaczone",
+    },
+    trigger: null,
+  });
+};
 
 type SettingsScreenProps = {
   navigation: any;
@@ -80,10 +117,22 @@ const SettingsScreen: React.FC<SettingsScreenProps> = ({
     setDraftNotificationsEnabled(initialNotifications);
     navigation.goBack();
   };
-  const handleSave = () => {
+  const handleSave = async () => {
+    const shouldNotifyEnabled =
+      !notificationsEnabled && draftNotificationsEnabled;
+
     setForceDark(draftForceDark);
     setBiometricsEnabled(draftBiometricsEnabled);
     setNotificationsEnabled(draftNotificationsEnabled);
+
+    if (shouldNotifyEnabled) {
+      try {
+        await notifyNotificationsEnabledAsync();
+      } catch (error) {
+        console.warn("Nie udalo sie wyslac powiadomienia", error);
+      }
+    }
+
     navigation.goBack();
   };
 
